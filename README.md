@@ -5,7 +5,7 @@
 
 #
 >in this small project I made an old pokedex using API, the project is not completed yet but soon I will solve the pending issues and finish the second part.<br><br>
->1º part: I modeled a <a href="https://media.discordapp.net/attachments/942936043466944574/969652493774651412/unknown.png?width=853&height=480" target=”_blank”>old pokédex</a> added some small details that no one notices but it makes a lot of difference, I intend to improve the look and also add some animations as soon as I learn how to do them :)
+>1º part: I modeled an <a href="https://media.discordapp.net/attachments/942936043466944574/969652493774651412/unknown.png?width=853&height=480" target=”_blank”>old pokédex</a> added some small details that no one notices but it makes a lot of difference, I intend to improve the look and also add some animations as soon as I learn how to do them :)
 
 #
 ![image](https://user-images.githubusercontent.com/74678483/166124862-4c8b260c-7349-45cb-9cff-2256d54e8a77.png)
