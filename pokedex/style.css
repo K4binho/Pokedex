@@ -1,0 +1,228 @@
+    * {
+        margin: 0;
+        padding: 0;
+    }
+    input{
+        all: unset;
+    } 
+    body {
+        height: 100vh;
+        width: 100vw;
+        display: flex;
+        flex-direction: column;
+        justify-content: start;
+        align-items: center;
+        background:rgb(255, 0, 0,0.8)  url('fundo.png') no-repeat;
+        background-position: bottom right;   
+        background-size: 100vh; 
+        color: white;
+        
+    } 
+    .logo {
+        width: 100%;
+        height: 22.5%;
+        justify-content: center;
+        justify-self: start;
+        align-items: center;
+        display: flex;
+    }
+    .top, .corpo-esquerdo{
+        margin-right: 380px;
+        background-color: #ce1b1b;
+        box-shadow:10px 10px 10px 7px rgba(22, 21, 21, 0.5);
+    }
+    .top{
+        display: flex;
+        border-top-left-radius: 50px;
+        border-top-right-radius: 15px;
+        max-width: 400px;
+    }
+    .top-esquerdo{  
+        width: 400px;
+        border-top-left-radius: 50px;
+        border-top-right-radius: 15px;
+        padding-bottom: 5px;
+        border: 2px solid rgb(0, 0, 0);
+
+    }
+    .circuloGrande{
+        width: 50px;
+        height: 50px;
+        border-radius: 50%;
+        overflow: hidden;
+        float: left;
+        margin: 15px;
+        margin-top: 30px;
+        background-color: rgb(0, 183, 255);
+        border: 3px solid rgb(255, 255, 255);
+        cursor: pointer;
+    }
+    .sombra{
+        box-shadow:-2.5px 4px 1px 0.1px rgba(22, 21, 21, 0.5);
+
+    }
+    .R{
+        background-color: rgb(255, 0, 0);
+    }
+    .Y{
+        background-color: rgb(251, 255, 0);
+    }
+    .G{
+        background-color: rgb(0, 255, 21);
+    }
+    .circuloPequeno{
+        width: 25px;
+        height: 25px;
+        border-radius: 50%;
+        overflow: hidden;
+        float: left;
+        margin: 5px;
+        border: 3px solid black;
+        margin-top: 30px;
+        cursor: pointer;
+    }
+    .corpo-esquerdo{
+        display: flex;
+        max-width: 400px;
+        max-height: 360px;
+        border-bottom-left-radius: 50px;
+    }
+
+    .lado-esquerdo{
+        position: relative;
+        width:  600px;
+        padding-bottom: 25px;
+        border: 2px solid black;
+        border: 2px solid rgb(0, 0, 0);
+        border-top: none;
+        border-bottom-left-radius: 50px;
+        margin-top: -30px;
+    }
+    .efeitoTelaPokemon{
+        background-color: #bdbdbd;
+        margin: 50px 20px;
+        padding: 15px 20px 35px 20px;
+        border-radius: 10px;
+        border-bottom-left-radius: 30px;
+        border: 2.5px solid black;
+
+    }
+    .telaDoPokemon{
+        align-items: center;
+        text-align: center;
+        background-color: rgba(0, 0, 0, 0.8);
+        border-radius: 10px;
+        border: 2.5px solid black;       
+    }
+    .img{
+        padding-bottom: 20px;
+        padding-top: 20px;
+    }
+    .nome{
+        position: absolute;
+        margin-top: 105px;
+        margin-left: 26px;
+        color: #14d033;
+        -webkit-text-stroke-width: 0.5px; /* largura da borda */
+        -webkit-text-stroke-color: #000; /* cor da borda */
+        text-decoration: underline #14d033;
+        
+    }
+    #poke{
+        text-align: center;
+        color: black;
+        -webkit-text-stroke-width: 0.5px; /* largura da borda */
+        -webkit-text-stroke-color: #000; /* cor da borda */
+    }
+    input{  
+        position:absolute;
+        margin-top: -60px;
+        margin-left: 100px;
+        height: 50px;
+        width: 170px;
+        border-radius: 15px;
+        background-color: rgb(15, 211, 28);
+        padding: 2.5px;
+        border: 1px solid black;
+    } 
+    input::placeholder {
+        color: black;
+      }
+    #cross{
+        position: absolute;
+        width: 70px;
+        height: 70px;
+        margin-top: -90px;
+        margin-left: 300px;
+        cursor: pointer;
+    }
+    .botaoLinha{
+        display: flex;
+    }
+    .bolinhaVermelha, .bolinhaVermelha2,.bolinhaVermelha3{
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        background-color: rgb(255, 0, 0);
+        border: 2.5px solid black;
+        margin-bottom: 10px;
+    }
+
+    .bolinhaVermelha{
+        margin-left: 130px;
+    }
+    .bolinhaVermelha2{
+        margin-left: 20px;
+    }
+    .bolinhaVermelha3{
+        position: absolute;
+        margin-top: 140px;
+        margin-left: 10px;
+        background-color: #00ff2a ;
+    }
+    .analogico{
+        cursor: pointer;
+        border-radius: 50%;
+        width: 50px;
+        height: 50px;
+        background-color: black;
+        border: 2.5px solid rgb(255, 255, 255);
+        position: absolute;
+        margin-top: 225px;
+        margin-left: -20px;
+    }
+    .linha1,.linha2,.linha3{
+        position: absolute;
+        width: 30px;
+        margin-left: 275px;
+        border: 2px solid rgb(0, 0, 0);
+        border-radius: 2px;
+        background-color: black;
+        margin-top: 183px;
+    }
+    .linha2{
+        margin-top: 190px;
+    }
+    .linha3{
+        margin-top: 197px;
+    }
+    .linha4,.linha5,.linha6{
+        position: absolute;
+        width: 40px;
+        height: 2px;
+        margin-left: 59px;
+        border:2px solid rgb(0, 0, 0);
+        border-radius: 5px;
+        background-color: rgb(255, 1, 213);
+        margin-top: 220px;
+    }
+    .linha5{
+        margin-left: 190px;
+        border-radius: 5px;
+        background-color: rgb(59, 0, 220);
+    }
+    .linha6{
+        margin-left: 125.2px;
+        border-radius: 5px;
+        background-color: rgb(0, 255, 17);
+    }
