@@ -27,9 +27,7 @@
   let pokemon = null;
   let controller = null;
   let moveController = null;
-  let suggestionController = null;
   let encounterRows = [];
-  let allPokemonNames = null;
   let tabLoaded = new Set();
 
   if (nodes.intro) {
@@ -68,41 +66,6 @@
     $('#pokemon-search').value = value;
     $('#search-form').requestSubmit();
   }
-  function hideSuggestions() {
-    suggestionController?.abort();
-    nodes.suggestions.hidden = true;
-    nodes.suggestionsList.replaceChildren();
-  }
-  async function suggestPokemon(search) {
-    hideSuggestions();
-    const request = new AbortController();
-    suggestionController = request;
-    try {
-      if (!allPokemonNames) {
-        const index = await getJSON('pokemon?limit=2000', request.signal);
-        if (request.signal.aborted) return;
-        allPokemonNames = index.results.map(p => p.name);
-      }
-      const names = guide.findSimilar(search, allPokemonNames);
-      if (request.signal.aborted) return;
-      if (!names.length) {
-        nodes.status.textContent = tr('status.noSuggest');
-        return;
-      }
-      nodes.suggestionsList.replaceChildren();
-      for (const name of names) {
-        const button = el('button', 'suggestion-button', label(name));
-        button.type = 'button';
-        button.addEventListener('click', () => chosenPokemon(name));
-        nodes.suggestionsList.append(button);
-      }
-      nodes.suggestions.hidden = false;
-      nodes.status.textContent = tr('status.suggest');
-    } catch {
-      if (!request.signal.aborted) nodes.status.textContent = tr('status.suggestError');
-    }
-  }
-
   // Interpretation of the PokeAPI evolution chain. Text is specific
   // to the selected language; location remains the source's actual location.
   function condition(detail) {
@@ -364,7 +327,9 @@
       const highest = Math.max(...list.map(x => x.score));
       for (const item of resolved) {
         const wrapper = el('div', 'ability-analysis');
-        wrapper.append(el('strong', '', label(item.name)));
+        const title = el('strong', '', locale.ability(item.name));
+        title.title = label(item.name);
+        wrapper.append(title);
         if (item.hidden) wrapper.append(el('span', 'guide-small', tr('guide.ability.hidden')));
         if (highest > 0 && item.score === highest) {
           wrapper.append(el('span', 'guide-highlight guide-small', tr('guide.ability.highlight')));
@@ -491,8 +456,6 @@
     nodes.encounterVersion.dataset.lastSelection = nodes.encounterVersion.value;
     renderEncounters();
   });
-  document.addEventListener('pokedex:search-start', hideSuggestions);
-  document.addEventListener('pokedex:not-found', event => void suggestPokemon(event.detail.query));
   document.addEventListener('pokedex:pokemon', event => changePokemon(event.detail.pokemon));
   document.addEventListener('pokedex:tab-change', event => ensureTab(event.detail.tab));
 })();

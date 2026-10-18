@@ -11,7 +11,16 @@
       'search.label': 'Buscar Pokémon',
       'search.placeholder': 'Nome ou número. Ex.: pikachu',
       'search.button': 'Buscar ↗',
-      'search.help': 'Pesquise por nome ou número da Pokédex Nacional.',
+      'search.help': 'Digite um nome, número ou escolha uma geração.',
+      'search.generation': 'Geração',
+      'search.genAll': 'Todas as gerações',
+      'search.genSpecific': '{number}ª geração',
+      'search.suggest': 'Sugestões de Pokémon',
+      'search.emptyGen': 'Nenhum Pokémon encontrado nesta geração.',
+      'search.loadingIndex': 'Carregando nomes para pesquisa...',
+      'status.outsideGen': '{name} não pertence à geração selecionada. Altere o filtro para visualizar.',
+      'status.genSelected': 'Mostrando Pokémon da {number}ª geração.',
+      'ability.untranslated': 'Nome original em inglês',
       'search.similar': 'Não encontramos esse nome. Você quis dizer:',
       'controls.random': 'Aleatório ⤨',
       'controls.favorite': '♡ Favoritar',
@@ -162,7 +171,16 @@
       'search.label': 'Search Pokémon',
       'search.placeholder': 'Name or number. E.g.: pikachu',
       'search.button': 'Search ↗',
-      'search.help': 'Search by name or National Pokédex number.',
+      'search.help': 'Enter a name, number or select a generation.',
+      'search.generation': 'Generation',
+      'search.genAll': 'All generations',
+      'search.genSpecific': 'Generation {number}',
+      'search.suggest': 'Pokémon suggestions',
+      'search.emptyGen': 'No Pokémon found in this generation.',
+      'search.loadingIndex': 'Loading names for search...',
+      'status.outsideGen': '{name} does not belong to the selected generation. Change the filter.',
+      'status.genSelected': 'Showing Pokémon from Generation {number}.',
+      'ability.untranslated': 'Original English name',
       'search.similar': 'No exact match. Did you mean:',
       'controls.random': 'Random ⤨',
       'controls.favorite': '♡ Favorite',
@@ -356,6 +374,13 @@
     window.PokedexGuide?.label(name) || name;
   const item = name => (lang === 'en' ? itemEn : itemPt)[name] ||
     window.PokedexGuide?.label(name) || name;
+  // Translations are editorial equivalents, not official Pokémon nomenclature.
+  // If a name is unknown, keep the exact English label instead of inventing one.
+  const ability = name => {
+    const original = window.PokedexGuide?.label(name) || String(name || '').replace(/-/g, ' ');
+    if (lang === 'en') return original;
+    return window.PokedexAbilitiesPT?.[name] || original;
+  };
   const applyStatic = () => {
     document.documentElement.lang = lang === 'en' ? 'en' : 'pt-BR';
     for (const element of document.querySelectorAll('[data-i18n]')) {
@@ -386,6 +411,6 @@
   }
   applyStatic();
   window.PokedexLocale = {
-    t, type, stat, item, get language() { return lang; }, setLanguage, applyStatic
+    t, type, stat, item, ability, get language() { return lang; }, setLanguage, applyStatic
   };
 })();

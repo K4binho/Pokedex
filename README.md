@@ -6,7 +6,7 @@ Pokédex interativa com visual de duas telas, construída em **HTML, CSS e JavaS
 
 ## Interface
 
-A primeira tela mostra a imagem e os controles de pesquisa. **Todos os detalhes ficam na segunda tela** em seis abas:
+A primeira tela mostra a imagem, a pesquisa inteligente com sugestões enquanto você digita e o filtro das gerações 1ª a 9ª. Ao escolher uma geração, a navegação anterior/próximo e o botão aleatório respeitam sua seleção. **Todos os detalhes ficam na segunda tela** em seis abas:
 
 | Aba | Informações |
 | --- | --- |
@@ -19,12 +19,12 @@ A primeira tela mostra a imagem e os controles de pesquisa. **Todos os detalhes 
 
 Os botões das abas ocupam a segunda tela sem empilhar os painéis sob a Pokédex. Também funcionam com **←/→, Home e End** quando um botão de aba está focado. A última aba visitada é lembrada durante a sessão.
 
-O cabeçalho permite alternar entre **PT-BR e English**, sem atualizar a página. O idioma fica salvo no navegador. Os nomes canônicos de Pokémon e golpes permanecem identificáveis pela PokéAPI; descrições sem tradução podem aparecer em inglês.
+O cabeçalho permite alternar entre **PT-BR e English**, sem atualizar a página. Os nomes das habilidades conhecidas têm traduções livres em português, tanto no resumo quanto nos detalhes; para termos raros ainda não traduzidos, o nome original em inglês é mantido em vez de apresentar uma tradução não verificada. O idioma fica salvo no navegador. Os nomes canônicos de Pokémon e golpes permanecem identificáveis pela PokéAPI; descrições sem tradução podem aparecer em inglês.
 
 ## Recursos adicionais
 
 - Animação de Pokébola abrindo o site (respeita preferência por movimento reduzido).
-- Busca por nome ou número e sugestões para erros comuns de digitação.
+- Busca por nome ou número, sugestões em tempo real para digitação parcial e erros comuns, e filtro de gerações I–IX (IDs 1–1025).
 - Navegação anterior, próximo e Pokémon aleatório.
 - Arte oficial e sprite alternativo.
 - Favoritos persistidos localmente (até 50).
@@ -55,6 +55,9 @@ node --check pokedex/guide.js
 node --check pokedex/enhancements.js
 node --check pokedex/i18n.js
 node --check pokedex/tabs.js
+node --check pokedex/catalog.js
+node --check pokedex/search.js
+node --check pokedex/ability-names.js
 node --test tests/*.test.cjs
 ```
 
@@ -75,6 +78,9 @@ pokedex/guide.js            # Regras puras de nomes, evolução, tipos e golpes
 pokedex/enhancements.js     # Consultas sob demanda e conteúdo das abas
 pokedex/i18n.js             # Português / inglês com preferência persistente
 pokedex/tabs.js             # Navegação e foco acessível entre abas
+pokedex/catalog.js          # Regras de pesquisa e limites por geração
+pokedex/search.js           # Autocompletar e filtro de geração
+pokedex/ability-names.js    # Glossário PT-BR (traduções livres)
 tests/*.test.cjs            # Testes automatizados Node
 ```
 
