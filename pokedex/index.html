@@ -8,11 +8,24 @@
   <link rel="icon" type="image/png" href="./icon.png">
   <link rel="preconnect" href="https://pokeapi.co">
   <link rel="preconnect" href="https://raw.githubusercontent.com">
-  <link rel="stylesheet" href="./style.css">
-  <script src="./script.js" defer></script>
+  <link rel="stylesheet" href="./style.css?v=2">
+  <script src="./guide.js?v=2" defer></script>
+  <script src="./script.js?v=2" defer></script>
   <title>Pokédex — Explore o mundo Pokémon</title>
 </head>
 <body>
+  <div id="intro-overlay" class="intro-overlay" aria-hidden="true">
+    <div class="intro-content">
+      <div class="intro-ball">
+        <div class="intro-half intro-half-top"></div>
+        <div class="intro-half intro-half-bottom"></div>
+        <div class="intro-band"></div>
+        <div class="intro-button"></div>
+      </div>
+      <span class="intro-title">K4 POKÉDEX</span>
+    </div>
+    <div class="intro-flash"></div>
+  </div>
   <a class="skip-link" href="#main">Ir para o conteúdo</a>
   <header class="site-header">
     <a class="brand" href="./" aria-label="Pokédex, página inicial"><span class="brand-ball" aria-hidden="true"></span> POKÉDEX <span class="brand-edition">/ CLASSIC</span></a>
@@ -20,12 +33,6 @@
   </header>
 
   <main id="main" class="page">
-    <div class="introduction">
-      <p class="eyebrow">CENTRAL DE EXPLORAÇÃO // 001—1025</p>
-      <h1>Descubra o próximo <span>Pokémon.</span></h1>
-      <p>Pesquise, explore os atributos e monte sua lista de favoritos em uma Pokédex com visual retrô.</p>
-    </div>
-
     <section class="pokedex" aria-label="Pokédex interativa">
       <div class="device-top" aria-hidden="true">
         <div class="lens"><span></span></div>
@@ -56,6 +63,10 @@
               <button class="btn btn-search" type="submit">Buscar <span aria-hidden="true">↗</span></button>
             </div>
             <p id="search-help" class="search-hint">Pesquise por nome ou número da Pokédex Nacional.</p>
+            <div id="suggestions" class="suggestions" hidden>
+              <p>Não encontramos esse nome. Você quis dizer:</p>
+              <div id="suggestion-list" class="suggestion-list"></div>
+            </div>
           </form>
 
           <div class="controls">
@@ -90,6 +101,39 @@
           <p class="storage-note">Favoritos salvos apenas neste navegador.</p>
         </section>
       </div>
+      <section class="battle-guide" aria-labelledby="guide-title">
+        <div class="guide-banner">
+          <div><p class="eyebrow">MANUAL DO TREINADOR // DADOS E ESTRATÉGIA</p><h2 id="guide-title">Guia para jogar</h2></div>
+          <p>Informações dos jogos principais. Regras e recomendações podem variar por versão.</p>
+        </div>
+        <div class="guide-grid">
+          <article class="guide-card">
+            <div class="guide-card-title"><span>01</span><h3>Perfil de batalha</h3></div>
+            <div id="guide-profile" class="guide-content" aria-live="polite">Carregando perfil...</div>
+          </article>
+          <article class="guide-card">
+            <div class="guide-card-title"><span>02</span><h3>Fraquezas e resistências</h3></div>
+            <div id="guide-matchups" class="guide-content">Carregando tipos...</div>
+          </article>
+          <article class="guide-card">
+            <div class="guide-card-title"><span>03</span><h3>Como evoluir</h3></div>
+            <div id="guide-evolutions" class="guide-content">Consultando evolução...</div>
+          </article>
+          <article class="guide-card">
+            <div class="guide-card-title"><span>04</span><h3>Habilidades em destaque</h3></div>
+            <div id="guide-abilities" class="guide-content">Consultando habilidades...</div>
+          </article>
+          <article class="guide-card guide-card-wide">
+            <div class="guide-card-title"><span>05</span><h3>Golpes sugeridos</h3></div>
+            <div class="version-control">
+              <label for="game-version">Versão do jogo</label>
+              <select id="game-version" aria-label="Selecionar versão para golpes" disabled><option>Carregando...</option></select>
+            </div>
+            <p class="guide-note">Seleção orientativa calculada por poder, precisão, STAB e atributos. Não representa o meta competitivo nem garante disponibilidade de MTs em cada edição.</p>
+            <div id="guide-moves" class="guide-content">Carregando golpes...</div>
+          </article>
+        </div>
+      </section>
       <div class="device-bottom" aria-hidden="true"><span>EST. 1996</span><span>POKÉDEX // ONLINE</span></div>
     </section>
 
