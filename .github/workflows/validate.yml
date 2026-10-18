@@ -14,6 +14,8 @@ jobs:
           node --check pokedex/script.js
           node --check pokedex/guide.js
           node --check pokedex/enhancements.js
+          node --check pokedex/i18n.js
+          node --check pokedex/tabs.js
       - name: Run guide logic tests
         run: node --test tests/*.test.cjs
       - name: Check opening experience
@@ -21,6 +23,14 @@ jobs:
           grep -q 'id="intro-overlay"' pokedex/index.html
           grep -q 'intro-open-top' pokedex/style.css
           ! grep -q 'CENTRAL DE EXPLORAÇÃO' pokedex/index.html
+      - name: Verify second-screen organization and language switch
+        run: |
+          grep -q 'data-language="pt"' pokedex/index.html
+          grep -q 'data-language="en"' pokedex/index.html
+          grep -q 'id="panel-evolution"' pokedex/index.html
+          grep -q 'id="guide-encounters"' pokedex/index.html
+          grep -q 'id="panel-favorites"' pokedex/index.html
+          ! grep -q 'class="battle-guide"' pokedex/index.html
       - name: Check entrypoint files
         run: |
           test -s index.html
@@ -28,3 +38,5 @@ jobs:
           test -s pokedex/style.css
           test -s pokedex/guide.js
           test -s pokedex/enhancements.js
+          test -s pokedex/i18n.js
+          test -s pokedex/tabs.js

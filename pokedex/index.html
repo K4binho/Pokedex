@@ -8,10 +8,12 @@
   <link rel="icon" type="image/png" href="./icon.png">
   <link rel="preconnect" href="https://pokeapi.co">
   <link rel="preconnect" href="https://raw.githubusercontent.com">
-  <link rel="stylesheet" href="./style.css?v=2">
-  <script src="./guide.js?v=2" defer></script>
-  <script src="./enhancements.js?v=2" defer></script>
-  <script src="./script.js?v=2" defer></script>
+  <link rel="stylesheet" href="./style.css?v=3">
+  <script src="./guide.js?v=3" defer></script>
+  <script src="./i18n.js?v=3" defer></script>
+  <script src="./enhancements.js?v=3" defer></script>
+  <script src="./script.js?v=3" defer></script>
+  <script src="./tabs.js?v=3" defer></script>
   <title>Pokédex — Explore o mundo Pokémon</title>
 </head>
 <body>
@@ -30,7 +32,13 @@
   <a class="skip-link" href="#main">Ir para o conteúdo</a>
   <header class="site-header">
     <a class="brand" href="./" aria-label="Pokédex, página inicial"><span class="brand-ball" aria-hidden="true"></span> POKÉDEX <span class="brand-edition">/ CLASSIC</span></a>
-    <span class="header-caption">Um Pokémon de cada vez</span>
+    <div class="header-actions">
+      <span class="header-caption" data-i18n="header.caption">Um Pokémon de cada vez</span>
+      <div class="language-switch" role="group" aria-label="Idioma / Language">
+        <button type="button" data-language="pt" aria-pressed="true">PT-BR</button>
+        <button type="button" data-language="en" aria-pressed="false">EN</button>
+      </div>
+    </div>
   </header>
 
   <main id="main" class="page">
@@ -46,10 +54,10 @@
       <div class="device-body">
         <section class="left-panel" aria-label="Visualização do Pokémon">
           <div class="screen-frame">
-            <div class="screen-top"><span class="camera-dot"></span><span>POKÉMON VIEWER</span><span id="screen-id">#0001</span></div>
+            <div class="screen-top"><span class="camera-dot"></span><span data-i18n="screen.viewer">POKÉMON VIEWER</span><span id="screen-id">#0001</span></div>
             <div class="screen" id="screen">
               <div class="scanlines" aria-hidden="true"></div>
-              <span class="screen-tag">REGISTRO NACIONAL</span>
+              <span class="screen-tag" data-i18n="screen.registry">REGISTRO NACIONAL</span>
               <img id="pokemon-image" class="pokemon-image" alt="Ilustração de Bulbasaur" src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/1.png" width="270" height="270" decoding="async">
               <span id="artwork-fallback" class="artwork-fallback" hidden>Imagem indisponível</span>
               <div class="screen-bottom"><h2 id="pokemon-name">Bulbasaur</h2><span class="screen-indicator" aria-hidden="true"></span></div>
@@ -58,87 +66,111 @@
           </div>
 
           <form id="search-form" class="search-form" role="search">
-            <label for="pokemon-search">Buscar Pokémon</label>
+            <label for="pokemon-search" data-i18n="search.label">Buscar Pokémon</label>
             <div class="search-row">
-              <input id="pokemon-search" name="pokemon" type="search" autocomplete="off" spellcheck="false" enterkeyhint="search" maxlength="60" placeholder="Nome ou número. Ex.: pikachu" aria-describedby="search-help">
-              <button class="btn btn-search" type="submit">Buscar <span aria-hidden="true">↗</span></button>
+              <input id="pokemon-search" name="pokemon" type="search" autocomplete="off" spellcheck="false" enterkeyhint="search" maxlength="60" placeholder="Nome ou número. Ex.: pikachu" data-i18n-placeholder="search.placeholder" aria-describedby="search-help">
+              <button class="btn btn-search" type="submit"><span data-i18n="search.button">Buscar ↗</span></button>
             </div>
-            <p id="search-help" class="search-hint">Pesquise por nome ou número da Pokédex Nacional.</p>
+            <p id="search-help" class="search-hint" data-i18n="search.help">Pesquise por nome ou número da Pokédex Nacional.</p>
             <div id="suggestions" class="suggestions" hidden>
-              <p>Não encontramos esse nome. Você quis dizer:</p>
+              <p data-i18n="search.similar">Não encontramos esse nome. Você quis dizer:</p>
               <div id="suggestion-list" class="suggestion-list"></div>
             </div>
           </form>
 
           <div class="controls">
             <div class="directional" role="group" aria-label="Navegação entre Pokémon">
-              <button id="previous" type="button" class="arrow-button" aria-label="Pokémon anterior" title="Pokémon anterior">←</button>
-              <button id="next" type="button" class="arrow-button" aria-label="Próximo Pokémon" title="Próximo Pokémon">→</button>
+              <button id="previous" type="button" class="arrow-button" aria-label="Pokémon anterior" data-i18n-aria="controls.prevLabel" title="Pokémon anterior">←</button>
+              <button id="next" type="button" class="arrow-button" aria-label="Próximo Pokémon" data-i18n-aria="controls.nextLabel" title="Próximo Pokémon">→</button>
             </div>
-            <button id="random" class="btn btn-ghost" type="button">Aleatório <span aria-hidden="true">⤨</span></button>
+            <button id="random" class="btn btn-ghost" type="button"><span data-i18n="controls.random">Aleatório ⤨</span></button>
             <button id="favorite" class="btn btn-favorite" type="button" aria-pressed="false" aria-label="Adicionar Pokémon aos favoritos"><span aria-hidden="true">♡</span> Favoritar</button>
           </div>
-          <p id="status" class="status" role="status" aria-live="polite">Preparando sua Pokédex...</p>
+          <p id="status" class="status" role="status" aria-live="polite" data-i18n="status.initial">Preparando sua Pokédex...</p>
         </section>
 
-        <section class="right-panel" aria-label="Dados do Pokémon">
-          <div class="panel-heading"><span class="panel-number">01 / DATA</span><span class="panel-dot" aria-hidden="true"></span></div>
-          <div class="details-heading"><div><p class="eyebrow">REGISTRO IDENTIFICADO</p><h2 id="detail-name">Bulbasaur</h2></div><span id="detail-id" class="number-badge">#0001</span></div>
+        <section class="right-panel" aria-label="Informações do Pokémon">
+          <div class="panel-heading">
+            <span class="panel-number">02 / TRAINER DATA</span>
+            <span class="panel-dot" aria-hidden="true"></span>
+          </div>
+          <div class="details-heading">
+            <div><p class="eyebrow" data-i18n="details.identification">REGISTRO IDENTIFICADO</p><h2 id="detail-name">Bulbasaur</h2></div>
+            <span id="detail-id" class="number-badge">#0001</span>
+          </div>
           <div id="types" class="types" aria-label="Tipos do Pokémon"></div>
 
-          <div class="measurements">
-            <div><span>ALTURA</span><strong id="height">—</strong></div>
-            <div><span>PESO</span><strong id="weight">—</strong></div>
+          <nav id="detail-tabs" class="detail-tabs" role="tablist" aria-label="Informações do Pokémon" data-i18n-aria="tablist">
+            <button id="tab-summary" class="detail-tab" type="button" role="tab" aria-selected="true" aria-controls="panel-summary" tabindex="0" data-tab="summary" data-i18n="tabs.summary">Resumo</button>
+            <button id="tab-evolution" class="detail-tab detail-tab-highlight" type="button" role="tab" aria-selected="false" aria-controls="panel-evolution" tabindex="-1" data-tab="evolution" data-i18n="tabs.evolution">Evolução</button>
+            <button id="tab-battle" class="detail-tab" type="button" role="tab" aria-selected="false" aria-controls="panel-battle" tabindex="-1" data-tab="battle" data-i18n="tabs.battle">Combate</button>
+            <button id="tab-moves" class="detail-tab" type="button" role="tab" aria-selected="false" aria-controls="panel-moves" tabindex="-1" data-tab="moves" data-i18n="tabs.moves">Golpes</button>
+            <button id="tab-abilities" class="detail-tab" type="button" role="tab" aria-selected="false" aria-controls="panel-abilities" tabindex="-1" data-tab="abilities" data-i18n="tabs.abilities">Habilidades</button>
+            <button id="tab-favorites" class="detail-tab" type="button" role="tab" aria-selected="false" aria-controls="panel-favorites" tabindex="-1" data-tab="favorites" data-i18n="tabs.favorites">Favoritos</button>
+          </nav>
+
+          <div class="tab-viewport">
+            <section id="panel-summary" class="tab-panel" role="tabpanel" aria-labelledby="tab-summary" tabindex="0">
+              <div class="measurements">
+                <div><span data-i18n="details.height">ALTURA</span><strong id="height">—</strong></div>
+                <div><span data-i18n="details.weight">PESO</span><strong id="weight">—</strong></div>
+              </div>
+              <div class="section-heading"><h3 data-i18n="details.stats">Estatísticas base</h3><span>BASE STATS</span></div>
+              <div id="stats" class="stats" aria-label="Estatísticas do Pokémon"></div>
+              <div class="section-heading"><h3 data-i18n="guide.profile">Perfil de batalha</h3><span>STRATEGY</span></div>
+              <div id="guide-profile" class="guide-content" data-loading="true" data-i18n="guide.profile.loading">Calculando perfil...</div>
+            </section>
+
+            <section id="panel-evolution" class="tab-panel" role="tabpanel" aria-labelledby="tab-evolution" tabindex="0" hidden>
+              <div class="section-heading"><h3 data-i18n="guide.evolutions">Como e onde evoluir</h3><span>EVOLUTION</span></div>
+              <div id="guide-evolutions" class="guide-content" data-i18n="guide.evolution.loading">Consultando evolução...</div>
+              <div class="section-heading section-divider"><h3 data-i18n="guide.encounters">Onde encontrar no jogo</h3><span>LOCATIONS</span></div>
+              <div class="version-control">
+                <label for="encounter-version" data-i18n="guide.encounters.version">Edição para captura</label>
+                <select id="encounter-version" disabled><option data-i18n="guide.loading">Carregando informações...</option></select>
+              </div>
+              <p class="guide-note" data-i18n="guide.encounters.help">Locais de captura registrados para as versões disponíveis.</p>
+              <div id="guide-encounters" class="guide-content" data-i18n="guide.encounters.loading">Consultando locais...</div>
+            </section>
+
+            <section id="panel-battle" class="tab-panel" role="tabpanel" aria-labelledby="tab-battle" tabindex="0" hidden>
+              <div class="section-heading"><h3 data-i18n="guide.matchups">Fraquezas e resistências</h3><span>TYPE CHART</span></div>
+              <div id="guide-matchups" class="guide-content" data-i18n="guide.type.loading">Consultando tipos...</div>
+            </section>
+
+            <section id="panel-moves" class="tab-panel" role="tabpanel" aria-labelledby="tab-moves" tabindex="0" hidden>
+              <div class="section-heading"><h3 data-i18n="guide.moves">Golpes sugeridos</h3><span>MOVESET</span></div>
+              <div class="version-control">
+                <label for="game-version" data-i18n="guide.game">Versão do jogo</label>
+                <select id="game-version" disabled><option data-i18n="guide.loading">Carregando informações...</option></select>
+              </div>
+              <p class="guide-note" data-i18n="guide.notes">Sugestões calculadas por atributos, tipo, poder e precisão. Variam por jogo.</p>
+              <div id="guide-moves" class="guide-content" data-i18n="guide.moves.loading">Carregando golpes...</div>
+            </section>
+
+            <section id="panel-abilities" class="tab-panel" role="tabpanel" aria-labelledby="tab-abilities" tabindex="0" hidden>
+              <div class="section-heading"><h3 data-i18n="details.abilities">Habilidades</h3><span>ABILITIES</span></div>
+              <div id="abilities" class="abilities"></div>
+              <div class="section-heading"><h3 data-i18n="guide.abilities">Habilidades em destaque</h3><span>DETAILS</span></div>
+              <div id="guide-abilities" class="guide-content" data-i18n="guide.abilities.loading">Consultando habilidades...</div>
+            </section>
+
+            <section id="panel-favorites" class="tab-panel" role="tabpanel" aria-labelledby="tab-favorites" tabindex="0" hidden>
+              <div class="favorites-heading">
+                <div class="section-heading"><h3 data-i18n="details.favorites">Meus favoritos</h3><span>LOCAL</span></div>
+                <button id="clear-favorites" class="text-button" type="button" data-i18n="details.clear" hidden>Limpar</button>
+              </div>
+              <div id="favorites-list" class="favorites-list"><p class="empty-message" data-i18n="details.empty">Nenhum favorito ainda.</p></div>
+              <p class="storage-note" data-i18n="details.saved">Favoritos salvos apenas neste navegador.</p>
+            </section>
           </div>
-
-          <div class="section-heading"><h3>Estatísticas base</h3><span>BASE STATS</span></div>
-          <div id="stats" class="stats" aria-label="Estatísticas do Pokémon"></div>
-
-          <div class="section-heading"><h3>Habilidades</h3><span>ABILITIES</span></div>
-          <div id="abilities" class="abilities"></div>
-
-          <div class="favorites-heading"><div class="section-heading"><h3>Meus favoritos</h3><span>LOCAL</span></div><button id="clear-favorites" class="text-button" type="button" hidden>Limpar</button></div>
-          <div id="favorites-list" class="favorites-list"><p class="empty-message">Nenhum favorito ainda.</p></div>
-          <p class="storage-note">Favoritos salvos apenas neste navegador.</p>
+          <div class="panel-shortcut"><span class="shortcut-dot" aria-hidden="true"></span><span data-i18n="header.caption">Um Pokémon de cada vez</span></div>
         </section>
       </div>
-      <section class="battle-guide" aria-labelledby="guide-title">
-        <div class="guide-banner">
-          <div><p class="eyebrow">MANUAL DO TREINADOR // DADOS E ESTRATÉGIA</p><h2 id="guide-title">Guia para jogar</h2></div>
-          <p>Informações dos jogos principais. Regras e recomendações podem variar por versão.</p>
-        </div>
-        <div class="guide-grid">
-          <article class="guide-card">
-            <div class="guide-card-title"><span>01</span><h3>Perfil de batalha</h3></div>
-            <div id="guide-profile" class="guide-content" aria-live="polite">Carregando perfil...</div>
-          </article>
-          <article class="guide-card">
-            <div class="guide-card-title"><span>02</span><h3>Fraquezas e resistências</h3></div>
-            <div id="guide-matchups" class="guide-content">Carregando tipos...</div>
-          </article>
-          <article class="guide-card">
-            <div class="guide-card-title"><span>03</span><h3>Como evoluir</h3></div>
-            <div id="guide-evolutions" class="guide-content">Consultando evolução...</div>
-          </article>
-          <article class="guide-card">
-            <div class="guide-card-title"><span>04</span><h3>Habilidades em destaque</h3></div>
-            <div id="guide-abilities" class="guide-content">Consultando habilidades...</div>
-          </article>
-          <article class="guide-card guide-card-wide">
-            <div class="guide-card-title"><span>05</span><h3>Golpes sugeridos</h3></div>
-            <div class="version-control">
-              <label for="game-version">Versão do jogo</label>
-              <select id="game-version" aria-label="Selecionar versão para golpes" disabled><option>Carregando...</option></select>
-            </div>
-            <p class="guide-note">Seleção orientativa calculada por poder, precisão, STAB e atributos. Não representa o meta competitivo nem garante disponibilidade de MTs em cada edição.</p>
-            <div id="guide-moves" class="guide-content">Carregando golpes...</div>
-          </article>
-        </div>
-      </section>
-      <div class="device-bottom" aria-hidden="true"><span>EST. 1996</span><span>POKÉDEX // ONLINE</span></div>
+      <div class="device-bottom" aria-hidden="true"><span>EST. 1996</span><span data-i18n="footer.built">POKÉDEX // ONLINE</span></div>
     </section>
 
-    <footer class="footer">Dados fornecidos por <a href="https://pokeapi.co/" target="_blank" rel="noopener noreferrer">PokéAPI</a>. Projeto independente, não afiliado à Nintendo, Game Freak ou The Pokémon Company.</footer>
+    <footer class="footer"><span data-i18n="footer.data">Dados da</span> <a href="https://pokeapi.co/" target="_blank" rel="noopener noreferrer">PokéAPI</a>. <span data-i18n="footer.disclaimer">Projeto independente, não afiliado à Nintendo, Game Freak ou The Pokémon Company.</span></footer>
   </main>
 </body>
 </html>

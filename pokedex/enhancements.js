@@ -1,369 +1,498 @@
 'use strict';
 
-// Recursos extras desacoplados do núcleo: o site continua utilizável
-// se uma seção secundária da PokéAPI não responder.
+/* All game data is loaded in the second Pokédex screen on demand.
+ * No battle guide is rendered under the device.
+ */
 (() => {
   const guide = window.PokedexGuide;
+  const locale = window.PokedexLocale;
+  const tr = (key, data) => locale.t(key, data);
   const $ = selector => document.querySelector(selector);
   const nodes = {
     intro: $('#intro-overlay'),
     suggestions: $('#suggestions'),
-    suggestionList: $('#suggestion-list'),
+    suggestionsList: $('#suggestion-list'),
     profile: $('#guide-profile'),
     matchups: $('#guide-matchups'),
     evolutions: $('#guide-evolutions'),
     abilities: $('#guide-abilities'),
     moves: $('#guide-moves'),
-    version: $('#game-version')
+    version: $('#game-version'),
+    encounters: $('#guide-encounters'),
+    encounterVersion: $('#encounter-version'),
+    status: $('#status')
   };
-  const API_ROOT = 'https://pokeapi.co/api/v2/';
+  const API = 'https://pokeapi.co/api/v2/';
+  const cached = new Map();
   let pokemon = null;
-  let guideController = null;
+  let controller = null;
+  let moveController = null;
   let suggestionController = null;
-  let movesController = null;
+  let encounterRows = [];
   let allPokemonNames = null;
+  let tabLoaded = new Set();
 
-  // Fallback sem JavaScript já é garantido pela animação CSS.
   if (nodes.intro) {
-    const delay = window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 0 : 3400;
+    const delay = matchMedia('(prefers-reduced-motion: reduce)').matches ? 0 : 3400;
     window.setTimeout(() => nodes.intro?.remove(), delay);
   }
 
-  const create = (tag, cls, value) => {
-    const node = document.createElement(tag);
-    if (cls) node.className = cls;
-    if (value !== undefined) node.textContent = value;
-    return node;
+  const el = (tag, className = '', content) => {
+    const item = document.createElement(tag);
+    if (className) item.className = className;
+    if (content !== undefined) item.textContent = content;
+    return item;
   };
-  function setMessage(container, message) {
-    container.replaceChildren(create('p', 'guide-small', message));
+  const label = value => guide.label(value || '');
+  function line(container, heading, value) {
+    const row = el('p');
+    row.append(el('strong', '', heading + ' '), document.createTextNode(value));
+    container.append(row);
   }
-  function addLine(container, title, content) {
-    const paragraph = create('p');
-    paragraph.append(create('strong', '', title + ' '), document.createTextNode(content));
-    container.append(paragraph);
+  function message(container, value) {
+    container.replaceChildren(el('p', 'guide-small', value));
   }
-  function addPill(container, name, multiplier, typeClass) {
-    const chip = create('span', 'guide-pill ' + (typeClass || ''),
-      (guide.TYPE_NAMES[name] || guide.label(name)) + ' ×' + multiplier);
-    container.append(chip);
+  function loading(key, node) { message(node, tr(key)); }
+  function pill(parent, name, factor, modifier = '') {
+    parent.append(el('span', 'guide-pill ' + modifier, locale.type(name) + ' ×' + factor));
   }
-  async function getJSON(resource, signal) {
-    const response = await fetch(API_ROOT + resource, { signal });
-    if (!response.ok) throw new Error('HTTP ' + response.status);
-    return response.json();
+  async function getJSON(path, signal) {
+    if (cached.has(path)) return cached.get(path);
+    const response = await fetch(API + path, { signal });
+    if (!response.ok) throw new Error('API ' + response.status);
+    const json = await response.json();
+    cached.set(path, json);
+    return json;
   }
-  function onError(container, signal, message) {
-    if (!signal.aborted) setMessage(container, message);
-  }
-  function selectPokemon(query) {
-    const input = $('#pokemon-search');
-    input.value = query;
+  function chosenPokemon(value) {
+    $('#pokemon-search').value = value;
     $('#search-form').requestSubmit();
   }
-
   function hideSuggestions() {
-    if (suggestionController) suggestionController.abort();
+    suggestionController?.abort();
     nodes.suggestions.hidden = true;
-    nodes.suggestionList.replaceChildren();
+    nodes.suggestionsList.replaceChildren();
   }
-
-  async function showSuggestions(search) {
+  async function suggestPokemon(search) {
     hideSuggestions();
-    const controller = new AbortController();
-    suggestionController = controller;
+    const request = new AbortController();
+    suggestionController = request;
     try {
       if (!allPokemonNames) {
-        // Inclui formas alternativas catalogadas no endpoint.
-        const index = await getJSON('pokemon?limit=2000', controller.signal);
-        if (controller.signal.aborted) return;
-        allPokemonNames = index.results.map(entry => entry.name);
+        const index = await getJSON('pokemon?limit=2000', request.signal);
+        if (request.signal.aborted) return;
+        allPokemonNames = index.results.map(p => p.name);
       }
-      const similar = guide.findSimilar(search, allPokemonNames);
-      if (controller.signal.aborted) return;
-      if (similar.length === 0) {
-        $('#status').textContent = 'Pokémon não encontrado. Confira o nome ou tente outro termo.';
+      const names = guide.findSimilar(search, allPokemonNames);
+      if (request.signal.aborted) return;
+      if (!names.length) {
+        nodes.status.textContent = tr('status.noSuggest');
         return;
       }
-      $('#status').textContent = 'Pokémon não encontrado. Escolha uma sugestão abaixo.';
-      nodes.suggestionList.replaceChildren();
-      for (const name of similar) {
-        const button = create('button', 'suggestion-button', guide.label(name));
+      nodes.suggestionsList.replaceChildren();
+      for (const name of names) {
+        const button = el('button', 'suggestion-button', label(name));
         button.type = 'button';
-        button.addEventListener('click', () => selectPokemon(name));
-        nodes.suggestionList.append(button);
+        button.addEventListener('click', () => chosenPokemon(name));
+        nodes.suggestionsList.append(button);
       }
       nodes.suggestions.hidden = false;
+      nodes.status.textContent = tr('status.suggest');
     } catch {
-      if (!controller.signal.aborted) {
-        $('#status').textContent = 'Pokémon não encontrado. Não foi possível consultar sugestões agora.';
-      }
+      if (!request.signal.aborted) nodes.status.textContent = tr('status.suggestError');
     }
   }
 
-  function drawProfile(data) {
-    nodes.profile.replaceChildren();
-    const profile = guide.battleProfile(data);
-    addLine(nodes.profile, 'Estilo:', profile.role);
-    addLine(nodes.profile, 'Naturezas para avaliar:', profile.nature);
-    addLine(nodes.profile, 'Prioridade de treino:', profile.focus);
-    const disclaimer = create('small', 'guide-small',
-      'Estimativa baseada nos atributos base. EVs, natureza e função ideal dependem de formato, habilidade, equipe e geração.');
-    nodes.profile.append(disclaimer);
+  // Interpretation of the PokeAPI evolution chain. Text is specific
+  // to the selected language; location remains the source's actual location.
+  function condition(detail) {
+    const parts = [];
+    const trigger = detail.trigger?.name;
+    const trKey = { 'level-up': 'guide.evo.level', trade: 'guide.evo.trade', 'use-item': 'guide.evo.item' }[trigger];
+    if (trigger) parts.push(trKey ? tr(trKey) : label(trigger));
+    if (detail.min_level != null) parts.push(tr('guide.evo.minLevel', { level: detail.min_level }));
+    if (detail.item) parts.push(locale.item(detail.item.name));
+    if (detail.held_item) parts.push(tr('guide.evo.hold', { item: locale.item(detail.held_item.name) }));
+    if (detail.min_happiness != null) parts.push(tr('guide.evo.happiness', { value: detail.min_happiness }));
+    if (detail.min_affection != null) parts.push(tr('guide.evo.affection', { value: detail.min_affection }));
+    if (detail.min_beauty != null) parts.push(tr('guide.evo.beauty', { value: detail.min_beauty }));
+    if (detail.time_of_day) parts.push(tr('guide.evo.time.' + detail.time_of_day));
+    if (detail.known_move) parts.push(tr('guide.evo.move', { name: label(detail.known_move.name) }));
+    if (detail.known_move_type) parts.push(tr('guide.evo.moveType', { name: locale.type(detail.known_move_type.name) }));
+    if (detail.party_species) parts.push(tr('guide.evo.partySpecies', { name: label(detail.party_species.name) }));
+    if (detail.party_type) parts.push(tr('guide.evo.partyType', { name: locale.type(detail.party_type.name) }));
+    if (detail.trade_species) parts.push(tr('guide.evo.tradeSpecies', { name: label(detail.trade_species.name) }));
+    if (detail.needs_overworld_rain) parts.push(tr('guide.evo.rain'));
+    if (detail.turn_upside_down) parts.push(tr('guide.evo.upsideDown'));
+    if (detail.gender === 1) parts.push(tr('guide.evo.female'));
+    if (detail.gender === 2) parts.push(tr('guide.evo.male'));
+    if (detail.relative_physical_stats === 1) parts.push(tr('guide.evo.attackHigher'));
+    if (detail.relative_physical_stats === -1) parts.push(tr('guide.evo.defenseHigher'));
+    if (detail.relative_physical_stats === 0) parts.push(tr('guide.evo.statsEqual'));
+    return {
+      how: parts.join(' · ') || tr('guide.evo.special'),
+      where: detail.location ? label(detail.location.name) : tr('guide.evo.anywhere')
+    };
   }
 
-  async function drawMatchups(data, signal) {
-    setMessage(nodes.matchups, 'Consultando tabela de tipos...');
+  function profile(data) {
+    nodes.profile.replaceChildren();
+    const suggestion = guide.battleProfile(data);
+    const map = {
+      'Resistente / suporte': 'bulky',
+      'Atacante físico rápido': 'physicalFast',
+      'Atacante físico': 'physical',
+      'Atacante especial rápido': 'specialFast',
+      'Atacante especial': 'special'
+    };
+    const roles = {
+      bulky: ['bulkNature', 'bulkFocus'],
+      physicalFast: ['physicalFastNature', 'physicalFocus'],
+      physical: ['physicalNature', 'physicalFocus'],
+      specialFast: ['specialFastNature', 'specialFocus'],
+      special: ['specialNature', 'specialFocus']
+    };
+    const id = map[suggestion.role];
+    const [nature, focus] = roles[id] || [];
+    line(nodes.profile, tr('guide.profile.role'), id ? tr('guide.profile.' + id) : suggestion.role);
+    line(nodes.profile, tr('guide.profile.nature'), nature ? tr('guide.profile.' + nature) : suggestion.nature);
+    line(nodes.profile, tr('guide.profile.training'), focus ? tr('guide.profile.' + focus) : suggestion.focus);
+    nodes.profile.append(el('small', 'guide-small', tr('guide.profile.caveat')));
+  }
+
+  async function matchups(data, signal) {
+    loading('guide.type.loading', nodes.matchups);
     const types = data.types.map(row => row.type.name);
     try {
-      const relations = await Promise.all(types.map(async name => {
-        const detail = await getJSON('type/' + encodeURIComponent(name), signal);
-        return { name, damage_relations: detail.damage_relations };
-      }));
+      const relations = await Promise.all(types.map(async name => ({
+        name, damage_relations: (await getJSON('type/' + encodeURIComponent(name), signal)).damage_relations
+      })));
       if (signal.aborted) return;
-      const effectiveness = guide.typeEffectiveness(types, relations);
+      const factors = guide.typeEffectiveness(types, relations);
       nodes.matchups.replaceChildren();
       const groups = [
-        { title: 'Fraquezas', values: Object.entries(effectiveness).filter(([, factor]) => factor > 1), cls: 'guide-pill-weak' },
-        { title: 'Resistências', values: Object.entries(effectiveness).filter(([, factor]) => factor > 0 && factor < 1), cls: 'guide-pill-resist' },
-        { title: 'Imunidades', values: Object.entries(effectiveness).filter(([, factor]) => factor === 0), cls: 'guide-pill-immune' }
+        ['guide.weak', value => value > 1, 'guide-pill-weak'],
+        ['guide.resist', value => value > 0 && value < 1, 'guide-pill-resist'],
+        ['guide.immune', value => value === 0, 'guide-pill-immune']
       ];
-      for (const group of groups) {
-        nodes.matchups.append(create('p', 'guide-mini-title', group.title));
-        if (!group.values.length) {
-          nodes.matchups.append(create('p', 'guide-small', 'Nenhuma'));
-          continue;
+      for (const [key, check, kind] of groups) {
+        nodes.matchups.append(el('p', 'guide-mini-title', tr(key)));
+        const values = Object.entries(factors).filter(([, value]) => check(value))
+          .sort((a, b) => b[1] - a[1]);
+        if (!values.length) {
+          nodes.matchups.append(el('p', 'guide-small', tr('guide.none')));
+        } else {
+          const row = el('div', 'guide-row');
+          for (const [name, amount] of values) pill(row, name, amount, kind);
+          nodes.matchups.append(row);
         }
-        const row = create('div', 'guide-row');
-        for (const [name, value] of group.values.sort((a, b) => b[1] - a[1])) {
-          addPill(row, name, value, group.cls);
-        }
-        nodes.matchups.append(row);
       }
-      nodes.matchups.append(create('small', 'guide-small',
-        'Multiplicadores defensivos padrão da tabela atual. Habilidades, clima, itens e regras de gerações antigas podem alterar os danos.'));
+      nodes.matchups.append(el('small', 'guide-small', tr('guide.types.caveat')));
     } catch {
-      onError(nodes.matchups, signal, 'Não foi possível carregar as vantagens e fraquezas.');
+      if (!signal.aborted) message(nodes.matchups, tr('guide.types.error'));
     }
   }
 
-  async function drawEvolutions(data, signal) {
-    setMessage(nodes.evolutions, 'Consultando a família evolutiva...');
+  async function evolutions(data, signal) {
+    loading('guide.evolution.loading', nodes.evolutions);
     try {
-      const speciesName = data.species?.name;
-      if (!speciesName) throw new Error('Sem espécie');
-      const species = await getJSON('pokemon-species/' + encodeURIComponent(speciesName), signal);
-      if (!species.evolution_chain?.url) throw new Error('Sem cadeia');
-      const chainId = guide.resourceId(species.evolution_chain.url);
-      if (!chainId) throw new Error('Sem cadeia');
+      const species = await getJSON('pokemon-species/' + encodeURIComponent(data.species.name), signal);
+      const chainId = guide.resourceId(species.evolution_chain?.url);
+      if (!chainId) throw new Error('No chain');
       const raw = await getJSON('evolution-chain/' + chainId, signal);
       if (signal.aborted) return;
       const stages = guide.evolutionPaths(raw.chain);
+      if (!stages.length) return message(nodes.evolutions, tr('guide.evo.none'));
       nodes.evolutions.replaceChildren();
-      if (!stages.length) {
-        setMessage(nodes.evolutions, 'Evolução não cadastrada.');
-        return;
-      }
-      const list = create('div', 'guide-list');
+      const list = el('div', 'guide-list');
       for (const stage of stages) {
-        const item = create('div', 'evolution-stage');
-        if (stage.id === guide.resourceId(data.species?.url)) item.classList.add('is-current');
-        const img = create('img');
+        const item = el('div', 'evolution-stage');
+        if (stage.id === guide.resourceId(data.species.url)) item.classList.add('is-current');
+        const img = el('img');
         img.src = 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/' + stage.id + '.png';
         img.alt = '';
+        img.width = 54;
+        img.height = 54;
         img.loading = 'lazy';
-        img.width = 62;
-        img.height = 62;
-        const text = create('div');
-        const button = create('button', '', guide.label(stage.name));
+        const info = el('div');
+        const button = el('button', '', label(stage.name));
         button.type = 'button';
-        button.addEventListener('click', () => selectPokemon(stage.name));
-        text.append(button);
+        button.addEventListener('click', () => chosenPokemon(stage.name));
+        info.append(button);
         if (stage.from) {
-          text.append(create('div', 'evolution-condition',
-            stage.conditions.length ? stage.conditions.join(' OU ') : 'Condição não informada'));
+          const rules = (stage.details || []).map(condition);
+          info.append(el('div', 'evolution-condition',
+            tr('guide.evo.details') + ' ' +
+            (rules.length ? rules.map(x => x.how).join(tr('guide.evo.or')) : tr('guide.evo.unknown'))));
+          const places = [...new Set(rules.map(x => x.where))];
+          info.append(el('div', 'evolution-condition evolution-location',
+            tr('guide.evo.where') + ' ' + (places.length ? places.join(tr('guide.evo.or')) : tr('guide.evo.anywhere'))));
         } else {
-          text.append(create('div', 'evolution-condition', 'Início da família'));
+          info.append(el('div', 'evolution-condition', tr('guide.evo.root')));
         }
-        item.append(img, text);
+        item.append(img, info);
         list.append(item);
       }
-      nodes.evolutions.append(list, create('small', 'guide-small',
-        'As condições podem variar entre jogos, regiões e gerações; cadeias ramificadas mostram caminhos alternativos.'));
+      nodes.evolutions.append(list, el('small', 'guide-small', tr('guide.evo.caveat')));
     } catch {
-      onError(nodes.evolutions, signal, 'Informações de evolução indisponíveis no momento.');
+      if (!signal.aborted) message(nodes.evolutions, tr('guide.evo.error'));
     }
   }
 
-  const ABILITY_TEXTS = {
-    'intimidate': 'Reduz o Ataque dos adversários ao entrar em batalha.',
-    'levitate': 'Concede imunidade a golpes do tipo Terra (salvo exceções).',
-    'overgrow': 'Fortalece golpes de Planta quando o HP está baixo.',
-    'blaze': 'Fortalece golpes de Fogo quando o HP está baixo.',
-    'torrent': 'Fortalece golpes de Água quando o HP está baixo.',
-    'static': 'Pode paralisar quem faz contato.',
-    'sturdy': 'Pode impedir um nocaute com o HP cheio.',
-    'technician': 'Fortalece golpes de menor poder base.',
-    'regenerator': 'Recupera parte do HP ao sair de campo.',
-    'speed-boost': 'Aumenta a Velocidade ao final dos turnos.',
-    'unaware': 'Ignora certas mudanças de atributos do oponente.',
-    'huge-power': 'Dobra o atributo de Ataque.',
-    'pure-power': 'Dobra o atributo de Ataque.',
-    'magic-guard': 'Evita dano indireto de muitas fontes.',
-    'moxie': 'Aumenta o Ataque após derrotar um adversário.',
-    'guts': 'Aumenta o Ataque quando o Pokémon está com uma condição de status.',
-    'chlorophyll': 'Dobra a Velocidade sob sol forte.',
-    'swift-swim': 'Dobra a Velocidade durante chuva.',
-    'prankster': 'Aumenta a prioridade de golpes de status (com exceções).',
-    'multiscale': 'Reduz dano recebido quando o HP está cheio.',
-    'wonder-guard': 'Em geral, recebe dano direto somente de golpes superefetivos.'
-  };
-
-  async function drawAbilities(data, signal) {
-    setMessage(nodes.abilities, 'Consultando habilidades...');
-    try {
-      const abilities = (data.abilities || []).map(row => ({
-        name: row.ability.name,
-        hidden: row.is_hidden,
-        score: guide.abilityScore(row.ability.name)
-      })).sort((a, b) => b.score - a.score);
-      if (!abilities.length) {
-        setMessage(nodes.abilities, 'Nenhuma habilidade cadastrada.');
-        return;
+  function renderEncounters() {
+    nodes.encounters.replaceChildren();
+    const version = nodes.encounterVersion.value;
+    const places = encounterRows.filter(row =>
+      row.version_details.some(detail => detail.version.name === version));
+    if (!places.length) return message(nodes.encounters, tr('guide.encounters.noLocation'));
+    const list = el('div', 'location-list');
+    for (const area of places.slice(0, 8)) {
+      const container = el('div', 'encounter-area');
+      container.append(el('strong', '', label(area.location_area.name)));
+      const details = area.version_details.find(d => d.version.name === version)?.encounter_details || [];
+      const levels = details.flatMap(entry => [entry.min_level, entry.max_level])
+        .filter(value => Number.isInteger(value) && value > 0);
+      if (levels.length) {
+        container.append(el('small', '', tr('guide.encounters.level', {
+          min: Math.min(...levels), max: Math.max(...levels)
+        })));
       }
-      // Busca somente as descrições que não possuem resumo em português.
-      const details = await Promise.all(abilities.map(async ability => {
-        if (ABILITY_TEXTS[ability.name]) return { ...ability, description: ABILITY_TEXTS[ability.name], english: false };
+      list.append(container);
+    }
+    nodes.encounters.append(list);
+    if (places.length > 8) nodes.encounters.append(el('p', 'guide-small',
+      tr('guide.encounters.more', { count: 8, total: places.length })));
+  }
+
+  async function encounters(data, signal) {
+    nodes.encounterVersion.disabled = true;
+    nodes.encounterVersion.replaceChildren();
+    loading('guide.encounters.loading', nodes.encounters);
+    try {
+      const raw = await getJSON('pokemon/' + data.id + '/encounters', signal);
+      if (signal.aborted) return;
+      encounterRows = raw;
+      const versions = new Map();
+      for (const row of raw) {
+        for (const item of row.version_details) {
+          versions.set(item.version.name, guide.resourceId(item.version.url));
+        }
+      }
+      const ordered = [...versions].sort((a, b) => b[1] - a[1]);
+      if (!ordered.length) {
+        return message(nodes.encounters, tr('guide.encounters.noWild'));
+      }
+      const previous = nodes.encounterVersion.dataset.lastSelection;
+      for (const [name] of ordered) {
+        const option = el('option', '', label(name));
+        option.value = name;
+        nodes.encounterVersion.append(option);
+      }
+      if (ordered.some(row => row[0] === previous)) nodes.encounterVersion.value = previous;
+      nodes.encounterVersion.disabled = false;
+      renderEncounters();
+    } catch {
+      if (!signal.aborted) message(nodes.encounters, tr('guide.encounters.error'));
+    }
+  }
+
+  const ABILITY_DESCRIPTIONS = {
+    intimidate: {
+      pt: 'Reduz o Ataque dos adversários ao entrar em combate.',
+      en: 'Lowers opponents’ Attack upon entering battle.'
+    },
+    levitate: {
+      pt: 'Concede imunidade a golpes de Terra, com exceções.',
+      en: 'Grants immunity to Ground-type moves, with exceptions.'
+    },
+    overgrow: {
+      pt: 'Fortalece golpes de Planta com HP baixo.',
+      en: 'Boosts Grass moves when HP is low.'
+    },
+    blaze: {
+      pt: 'Fortalece golpes de Fogo com HP baixo.',
+      en: 'Boosts Fire moves when HP is low.'
+    },
+    torrent: {
+      pt: 'Fortalece golpes de Água com HP baixo.',
+      en: 'Boosts Water moves when HP is low.'
+    },
+    static: { pt: 'Pode paralisar quem faz contato.', en: 'May paralyze opponents on contact.' },
+    sturdy: {
+      pt: 'Pode impedir que o Pokémon seja derrotado com HP cheio.',
+      en: 'Can prevent a knockout at full HP.'
+    },
+    regenerator: {
+      pt: 'Recupera parte do HP ao sair de campo.',
+      en: 'Restores some HP when switching out.'
+    },
+    'speed-boost': {
+      pt: 'Aumenta a Velocidade ao fim de cada turno.',
+      en: 'Raises Speed at the end of each turn.'
+    },
+    unaware: {
+      pt: 'Ignora certas alterações de atributos adversários.',
+      en: 'Ignores certain opponent stat changes.'
+    },
+    'huge-power': { pt: 'Dobra o Ataque.', en: 'Doubles Attack.' },
+    'pure-power': { pt: 'Dobra o Ataque.', en: 'Doubles Attack.' },
+    'magic-guard': { pt: 'Evita muitas fontes de dano indireto.', en: 'Avoids many forms of indirect damage.' }
+  };
+  async function abilities(data, signal) {
+    loading('guide.abilities.loading', nodes.abilities);
+    try {
+      const list = data.abilities.map(({ ability, is_hidden }) => ({
+        name: ability.name, hidden: is_hidden, score: guide.abilityScore(ability.name)
+      })).sort((a, b) => b.score - a.score);
+      if (!list.length) return message(nodes.abilities, tr('guide.ability.none'));
+      const resolved = await Promise.all(list.map(async ability => {
+        const known = ABILITY_DESCRIPTIONS[ability.name]?.[locale.language];
+        if (known) return { ...ability, text: known };
         try {
-          const result = await getJSON('ability/' + encodeURIComponent(ability.name), signal);
-          const effect = (result.effect_entries || []).find(entry => entry.language?.name === 'en');
-          const flavor = (result.flavor_text_entries || []).find(entry => entry.language?.name === 'en');
-          return { ...ability, description: effect?.short_effect || flavor?.flavor_text || 'Sem descrição.',
-            english: true };
+          const info = await getJSON('ability/' + encodeURIComponent(ability.name), signal);
+          const language = info.effect_entries.find(x => x.language.name === locale.language);
+          const english = info.effect_entries.find(x => x.language.name === 'en');
+          const flavor = info.flavor_text_entries?.find(x => x.language.name === 'en');
+          return { ...ability, text: language?.short_effect || english?.short_effect ||
+            flavor?.flavor_text || '—' };
         } catch {
-          return { ...ability, description: 'Descrição indisponível.', english: false };
+          return { ...ability, text: '—' };
         }
       }));
       if (signal.aborted) return;
       nodes.abilities.replaceChildren();
-      const max = Math.max(...abilities.map(row => row.score));
-      for (const ability of details) {
-        const div = create('div', 'ability-analysis');
-        const heading = create('strong', '', guide.label(ability.name));
-        div.append(heading);
-        if (ability.hidden) div.append(create('span', 'guide-small', 'Habilidade oculta'));
-        if (max > 0 && ability.score === max) {
-          div.append(create('span', 'guide-highlight guide-small', 'Destaque geral (estimativa)'));
+      const highest = Math.max(...list.map(x => x.score));
+      for (const item of resolved) {
+        const wrapper = el('div', 'ability-analysis');
+        wrapper.append(el('strong', '', label(item.name)));
+        if (item.hidden) wrapper.append(el('span', 'guide-small', tr('guide.ability.hidden')));
+        if (highest > 0 && item.score === highest) {
+          wrapper.append(el('span', 'guide-highlight guide-small', tr('guide.ability.highlight')));
         }
-        div.append(create('p', 'guide-small',
-          ability.description.replace(/\s+/g, ' ').trim() + (ability.english ? ' (EN)' : '')));
-        nodes.abilities.append(div);
+        wrapper.append(el('p', 'guide-small', item.text.replace(/\s+/g, ' ')));
+        nodes.abilities.append(wrapper);
       }
-      nodes.abilities.append(create('small', 'guide-small',
-        'Destaque por potencial geral; a melhor habilidade depende do jogo, da estratégia e do adversário.'));
+      nodes.abilities.append(el('small', 'guide-small', tr('guide.ability.note')));
     } catch {
-      onError(nodes.abilities, signal, 'Não foi possível consultar as habilidades.');
+      if (!signal.aborted) message(nodes.abilities, tr('guide.ability.error'));
     }
   }
 
-  function updateVersions(data) {
+  function versions(data) {
+    const previous = nodes.version.value;
     nodes.version.replaceChildren();
-    const versions = guide.groupVersions(data);
-    for (const version of versions) {
-      const option = create('option', '', guide.label(version.name));
-      option.value = version.name;
+    const list = guide.groupVersions(data);
+    for (const group of list) {
+      const option = el('option', '', label(group.name));
+      option.value = group.name;
       nodes.version.append(option);
     }
-    nodes.version.disabled = !versions.length;
-    if (!versions.length) setMessage(nodes.moves, 'Golpes não cadastrados para este Pokémon.');
-    return versions.length > 0;
+    if (list.some(x => x.name === previous)) nodes.version.value = previous;
+    nodes.version.disabled = !list.length;
+    if (!list.length) message(nodes.moves, tr('guide.moves.noVersions'));
   }
-
   async function concurrentMap(items, limit, signal, worker) {
-    const result = Array(items.length);
-    let index = 0;
+    const results = Array(items.length);
+    let next = 0;
     async function run() {
-      while (index < items.length && !signal.aborted) {
-        const slot = index++;
-        try { result[slot] = await worker(items[slot]); }
-        catch { result[slot] = null; }
+      while (next < items.length && !signal.aborted) {
+        const index = next++;
+        try { results[index] = await worker(items[index]); }
+        catch { results[index] = null; }
       }
     }
-    await Promise.all(Array.from({ length: Math.min(limit, items.length) }, run));
-    return result.filter(Boolean);
+    await Promise.all(Array.from({ length: Math.min(items.length, limit) }, run));
+    return results.filter(Boolean);
   }
-
-  async function drawMoves(data, version) {
-    if (movesController) movesController.abort();
-    const controller = new AbortController();
-    movesController = controller;
-    setMessage(nodes.moves, 'Analisando golpes disponíveis em ' + guide.label(version) + '...');
+  async function moves(data, version) {
+    moveController?.abort();
+    const signal = (moveController = new AbortController()).signal;
+    loading('guide.moves.loading', nodes.moves);
+    message(nodes.moves, tr('guide.moves.analyzing', { version: label(version) }));
     try {
-      const available = guide.availableMoves(data, version);
-      const pool = guide.pickMovePool(available);
-      if (!pool.length) {
-        setMessage(nodes.moves, 'Esta versão não possui golpes cadastrados na PokéAPI.');
-        return;
-      }
-      const options = await concurrentMap(pool, 4, controller.signal, async move => {
-        const detail = await getJSON('move/' + encodeURIComponent(move.name), controller.signal);
-        return { detail, method: move.method, level: move.level };
-      });
-      if (controller.signal.aborted || data !== pokemon) return;
-      const picked = guide.recommendMoves(data, options);
+      const pool = guide.pickMovePool(guide.availableMoves(data, version));
+      if (!pool.length) return message(nodes.moves, tr('guide.moves.noMoves'));
+      const options = await concurrentMap(pool, 4, signal, async move => ({
+        detail: await getJSON('move/' + encodeURIComponent(move.name), signal),
+        method: move.method, level: move.level
+      }));
+      if (signal.aborted || data !== pokemon) return;
+      const suggested = guide.recommendMoves(data, options);
+      if (!suggested.length) return message(nodes.moves, tr('guide.moves.noneAnalyzed'));
       nodes.moves.replaceChildren();
-      if (!picked.length) {
-        setMessage(nodes.moves, 'Nenhum golpe pôde ser analisado nesta consulta.');
-        return;
-      }
-      const grid = create('div', 'moves-grid');
-      const methods = { 'level-up': 'Nível', machine: 'MT', tutor: 'Tutor', egg: 'Ovo' };
-      for (const move of picked) {
-        const card = create('div', 'move-card');
-        const title = create('div', 'move-card-title');
-        title.append(create('strong', '', guide.label(move.detail.name)));
-        const type = create('span', 'guide-pill',
-          guide.TYPE_NAMES[move.detail.type?.name] || guide.label(move.detail.type?.name));
-        title.append(type);
-        const category = move.detail.damage_class?.name === 'physical'
-          ? 'Físico' : move.detail.damage_class?.name === 'special' ? 'Especial' : 'Status';
+      const grid = el('div', 'moves-grid');
+      for (const move of suggested) {
+        const card = el('div', 'move-card');
+        const heading = el('div', 'move-card-title');
+        heading.append(el('strong', '', label(move.detail.name)),
+          el('span', 'guide-pill', locale.type(move.detail.type?.name)));
+        const kind = {
+          physical: 'guide.moves.physical',
+          special: 'guide.moves.special',
+          status: 'guide.moves.status'
+        }[move.detail.damage_class?.name] || 'guide.moves.status';
         const power = move.detail.power ?? '—';
         const accuracy = move.detail.accuracy == null ? '—' : move.detail.accuracy + '%';
-        const source = (methods[move.method] || guide.label(move.method)) +
-          (move.method === 'level-up' && move.level ? ' ' + move.level : '');
-        card.append(title, create('div', 'move-card-meta',
-          category + ' · Poder ' + power + ' · Precisão ' + accuracy));
-        card.append(create('div', 'move-card-meta', 'Aprende via ' + source));
+        heading.append();
+        const method = {
+          'level-up': tr('guide.moves.level', { level: move.level || '—' }),
+          machine: tr('guide.moves.machine'),
+          tutor: tr('guide.moves.tutor'),
+          egg: tr('guide.moves.egg')
+        }[move.method] || label(move.method);
+        card.append(heading,
+          el('div', 'move-card-meta',
+            tr(kind) + ' · ' + tr('guide.moves.power') + ' ' + power + ' · ' +
+            tr('guide.moves.accuracy') + ' ' + accuracy),
+          el('div', 'move-card-meta', tr('guide.moves.learn', { method })));
         grid.append(card);
       }
       nodes.moves.append(grid);
     } catch {
-      if (!controller.signal.aborted) setMessage(nodes.moves, 'Não foi possível analisar os golpes.');
+      if (!signal.aborted) message(nodes.moves, tr('guide.moves.error'));
     }
   }
 
-  function loadGuide(data) {
-    if (guideController) guideController.abort();
-    if (movesController) movesController.abort();
-    guideController = new AbortController();
-    pokemon = data;
-    const signal = guideController.signal;
-    drawProfile(data);
-    void drawMatchups(data, signal);
-    void drawEvolutions(data, signal);
-    void drawAbilities(data, signal);
-    if (updateVersions(data)) void drawMoves(data, nodes.version.value);
+  function ensureTab(name) {
+    if (!pokemon || !controller || controller.signal.aborted || tabLoaded.has(name)) return;
+    tabLoaded.add(name);
+    const signal = controller.signal;
+    if (name === 'summary') profile(pokemon);
+    if (name === 'battle') void matchups(pokemon, signal);
+    if (name === 'evolution') {
+      void evolutions(pokemon, signal);
+      void encounters(pokemon, signal);
+    }
+    if (name === 'abilities') void abilities(pokemon, signal);
+    if (name === 'moves' && !nodes.version.disabled) void moves(pokemon, nodes.version.value);
   }
-
+  function changePokemon(data) {
+    controller?.abort();
+    moveController?.abort();
+    controller = new AbortController();
+    pokemon = data;
+    tabLoaded = new Set();
+    loading('guide.profile.loading', nodes.profile);
+    loading('guide.type.loading', nodes.matchups);
+    loading('guide.evolution.loading', nodes.evolutions);
+    loading('guide.encounters.loading', nodes.encounters);
+    loading('guide.abilities.loading', nodes.abilities);
+    loading('guide.moves.loading', nodes.moves);
+    nodes.encounterVersion.disabled = true;
+    nodes.encounterVersion.replaceChildren();
+    encounterRows = [];
+    versions(data);
+    ensureTab(window.PokedexTabs?.active || 'summary');
+  }
   nodes.version.addEventListener('change', () => {
-    if (pokemon) void drawMoves(pokemon, nodes.version.value);
+    if (pokemon && !nodes.version.disabled) void moves(pokemon, nodes.version.value);
+  });
+  nodes.encounterVersion.addEventListener('change', () => {
+    nodes.encounterVersion.dataset.lastSelection = nodes.encounterVersion.value;
+    renderEncounters();
   });
   document.addEventListener('pokedex:search-start', hideSuggestions);
-  document.addEventListener('pokedex:not-found', event => {
-    void showSuggestions(event.detail.query);
-  });
-  document.addEventListener('pokedex:pokemon', event => {
-    hideSuggestions();
-    loadGuide(event.detail.pokemon);
-  });
+  document.addEventListener('pokedex:not-found', event => void suggestPokemon(event.detail.query));
+  document.addEventListener('pokedex:pokemon', event => changePokemon(event.detail.pokemon));
+  document.addEventListener('pokedex:tab-change', event => ensureTab(event.detail.tab));
 })();

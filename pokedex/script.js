@@ -2,6 +2,9 @@
 
 const API_URL = 'https://pokeapi.co/api/v2/pokemon/';
 const MAX_POKEMON = 1025;
+const locale = window.PokedexLocale;
+const tr = (key, vars) => locale?.t(key, vars) || key;
+
 const STORAGE_KEY = 'k4-pokedex-favorites-v1';
 const LAST_KEY = 'k4-pokedex-last-v1';
 
@@ -43,6 +46,7 @@ const STAT_NAMES = {
 };
 
 let currentPokemon = null;
+let lastRenderedPokemon = null;
 let activeRequest = null;
 let favorites = readFavorites();
 
@@ -89,7 +93,7 @@ function renderFavorites() {
   if (!favorites.length) {
     const empty = document.createElement('p');
     empty.className = 'empty-message';
-    empty.textContent = 'Nenhum favorito ainda.';
+    empty.textContent = tr('details.empty');
     ui.favoritesList.append(empty);
   }
 
@@ -98,23 +102,21 @@ function renderFavorites() {
     button.type = 'button';
     button.className = 'favorite-chip';
     button.textContent = paddedId(id) + ' ' + formatName(name);
-    button.setAttribute('aria-label', 'Exibir ' + formatName(name));
+    button.setAttribute('aria-label', tr('controls.show', { name: formatName(name) }));
     button.addEventListener('click', () => loadPokemon(id));
     ui.favoritesList.append(button);
   });
 
   const selected = currentPokemon && favorites.some((item) => item.id === currentPokemon.id);
   ui.favorite.setAttribute('aria-pressed', String(Boolean(selected)));
-  ui.favorite.setAttribute('aria-label',
-    (selected ? 'Remover ' : 'Adicionar ') +
-    (currentPokemon ? formatName(currentPokemon.name) : 'Pokémon') +
-    (selected ? ' dos favoritos' : ' aos favoritos'));
-  ui.favorite.innerHTML = selected
-    ? '<span aria-hidden="true">♥</span> Favorito'
-    : '<span aria-hidden="true">♡</span> Favoritar';
+  ui.favorite.setAttribute('aria-label', tr(selected ? 'controls.favRemove' : 'controls.favAdd', {
+    name: currentPokemon ? formatName(currentPokemon.name) : 'Pokémon'
+  }));
+  ui.favorite.textContent = tr(selected ? 'controls.favorited' : 'controls.favorite');
 }
 
-function renderPokemon(data) {
+function renderPokemon(data, preserveInput = false) {
+  lastRenderedPokemon = data;
   currentPokemon = { id: data.id, name: data.name };
   const label = formatName(data.name);
   const number = paddedId(data.id);
@@ -125,12 +127,12 @@ function renderPokemon(data) {
   ui.detailName.textContent = label;
   ui.screenId.textContent = number;
   ui.detailId.textContent = number;
-  ui.height.textContent = (data.height / 10).toLocaleString('pt-BR', { maximumFractionDigits: 1 }) + ' m';
-  ui.weight.textContent = (data.weight / 10).toLocaleString('pt-BR', { maximumFractionDigits: 1 }) + ' kg';
+  ui.height.textContent = (data.height / 10).toLocaleString(locale.language === 'en' ? 'en-US' : 'pt-BR', { maximumFractionDigits: 1 }) + ' m';
+  ui.weight.textContent = (data.weight / 10).toLocaleString(locale.language === 'en' ? 'en-US' : 'pt-BR', { maximumFractionDigits: 1 }) + ' kg';
 
   ui.image.hidden = false;
   ui.imageFallback.hidden = true;
-  ui.image.alt = 'Ilustração de ' + label;
+  ui.image.alt = tr('screen.image', { name: label });
   ui.image.dataset.fallback = sprite || '';
   if (artwork || sprite) {
     ui.image.src = artwork || sprite;
@@ -143,7 +145,7 @@ function renderPokemon(data) {
   data.types.forEach(({ type }) => {
     const tag = document.createElement('span');
     tag.className = 'type type-' + type.name;
-    tag.textContent = TYPE_NAMES[type.name] || formatName(type.name);
+    tag.textContent = locale.type(type.name);
     ui.types.append(tag);
   });
 
@@ -153,7 +155,7 @@ function renderPokemon(data) {
     row.className = 'stat-row';
     const name = document.createElement('span');
     name.className = 'stat-name';
-    name.textContent = STAT_NAMES[stat.name] || formatName(stat.name);
+    name.textContent = locale.stat(stat.name);
     const track = document.createElement('div');
     track.className = 'stat-track';
     track.setAttribute('role', 'meter');
@@ -176,13 +178,13 @@ function renderPokemon(data) {
   data.abilities.forEach(({ ability, is_hidden: hidden }) => {
     const item = document.createElement('span');
     item.className = 'ability';
-    item.textContent = formatName(ability.name) + (hidden ? ' · oculta' : '');
+    item.textContent = formatName(ability.name) + (hidden ? ' · ' + tr('guide.ability.hidden') : '');
     ui.abilities.append(item);
   });
 
   ui.previous.disabled = data.id <= 1;
   ui.next.disabled = data.id >= MAX_POKEMON;
-  ui.input.value = '';
+  if (!preserveInput) ui.input.value = '';
   persist(LAST_KEY, data.id);
   renderFavorites();
   document.dispatchEvent(new CustomEvent('pokedex:pokemon', { detail: { pokemon: data } }));
@@ -191,12 +193,12 @@ function renderPokemon(data) {
 async function loadPokemon(query) {
   const search = normalizeQuery(String(query));
   if (!search) {
-    setStatus('Digite um nome ou número para pesquisar.', true);
+    setStatus(tr('status.empty'), true);
     ui.input.focus();
     return;
   }
   if (/^\d+$/.test(search) && (+search < 1 || +search > MAX_POKEMON)) {
-    setStatus('Use um número entre 1 e ' + MAX_POKEMON + '.', true);
+    setStatus(tr('status.range', { max: MAX_POKEMON }), true);
     return;
   }
 
@@ -205,7 +207,7 @@ async function loadPokemon(query) {
   const controller = new AbortController();
   activeRequest = controller;
   ui.screen.classList.add('is-loading');
-  setStatus('Buscando Pokémon...');
+  setStatus(tr('status.searching'));
   const timeoutId = setTimeout(() => controller.abort(), 12000);
 
   try {
@@ -215,16 +217,16 @@ async function loadPokemon(query) {
     const data = await response.json();
     if (controller !== activeRequest) return;
     renderPokemon(data);
-    setStatus(formatName(data.name) + ' encontrado com sucesso.');
+    setStatus(tr('status.found', { name: formatName(data.name) }));
   } catch (error) {
     if (controller !== activeRequest) return;
     if (error.name === 'AbortError') {
-      setStatus('A consulta demorou demais. Tente novamente.', true);
+      setStatus(tr('status.timeout'), true);
     } else if (error.message === 'not-found') {
-      setStatus('Pokémon não encontrado. Procurando nomes parecidos...', true);
+      setStatus(tr('status.notFound'), true);
       document.dispatchEvent(new CustomEvent('pokedex:not-found', { detail: { query: search } }));
     } else {
-      setStatus('Falha de conexão com a PokéAPI. Verifique sua internet e tente novamente.', true);
+      setStatus(tr('status.network'), true);
     }
   } finally {
     clearTimeout(timeoutId);
@@ -255,11 +257,11 @@ ui.favorite.addEventListener('click', () => {
   const index = favorites.findIndex((item) => item.id === currentPokemon.id);
   if (index >= 0) {
     favorites.splice(index, 1);
-    setStatus('Removido dos favoritos.');
+    setStatus(tr('status.favRemoved'));
   } else {
     favorites.unshift({ ...currentPokemon });
     favorites = favorites.slice(0, 50);
-    setStatus('Adicionado aos favoritos.');
+    setStatus(tr('status.favAdded'));
   }
   persist(STORAGE_KEY, favorites);
   renderFavorites();
@@ -268,7 +270,7 @@ ui.clearFavorites.addEventListener('click', () => {
   favorites = [];
   persist(STORAGE_KEY, favorites);
   renderFavorites();
-  setStatus('Lista de favoritos limpa.');
+  setStatus(tr('status.favCleared'));
 });
 ui.image.addEventListener('error', () => {
   const fallback = ui.image.dataset.fallback;
@@ -292,6 +294,14 @@ document.addEventListener('keydown', (event) => {
   }
 });
 
+document.addEventListener('pokedex:language-change', () => {
+  if (lastRenderedPokemon) {
+    renderPokemon(lastRenderedPokemon, true);
+    setStatus(tr('status.found', { name: formatName(lastRenderedPokemon.name) }));
+  } else {
+    renderFavorites();
+  }
+});
 renderFavorites();
 let last = 1;
 try {
