@@ -136,7 +136,8 @@
       const id = resourceId(node.species?.url);
       list.push({
         id, name: node.species?.name || '', from: previous,
-        conditions: [...new Set(conditions)].slice(0, 3)
+        conditions: [...new Set(conditions)].slice(0, 3),
+        details: node.evolution_details || []
       });
       for (const next of node.evolves_to || []) traverse(next, id);
     }
