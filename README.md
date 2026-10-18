@@ -1,5 +1,7 @@
 # Pokédex Classic
 
+**[Abrir Pokédex online](https://k4binho.github.io/Pokedex/)** — disponível após ativar o GitHub Pages no repositório.
+
 Uma Pokédex responsiva inspirada no dispositivo clássico, construída com **HTML, CSS e JavaScript puro** e dados da [PokéAPI](https://pokeapi.co/).
 
 ## Recursos
@@ -23,7 +25,16 @@ Acesse `http://localhost:8000`. É necessário ter internet para consultar a Pok
 
 ## Publicação
 
-O arquivo `index.html` da raiz redireciona para `/pokedex/`. Para hospedar no GitHub Pages, configure **Settings → Pages → Deploy from a branch → main → /(root)** após integrar as alterações.
+O arquivo `index.html` da raiz redireciona para `/pokedex/`.
+
+Para ativar a hospedagem gratuita **uma única vez**:
+
+1. Acesse [Settings → Pages](https://github.com/K4binho/Pokedex/settings/pages).
+2. Em **Build and deployment**, selecione **Deploy from a branch**.
+3. Escolha **main** e **/(root)**, depois clique em **Save**.
+4. Quando o GitHub concluir o primeiro deploy, abra **https://k4binho.github.io/Pokedex/**.
+
+Após essa ativação, cada atualização na branch `main` será publicada automaticamente no GitHub Pages.
 
 ## Verificação
 
