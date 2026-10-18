@@ -81,7 +81,11 @@
       }
       const similar = guide.findSimilar(search, allPokemonNames);
       if (controller.signal.aborted) return;
-      if (similar.length === 0) return;
+      if (similar.length === 0) {
+        $('#status').textContent = 'Pokémon não encontrado. Confira o nome ou tente outro termo.';
+        return;
+      }
+      $('#status').textContent = 'Pokémon não encontrado. Escolha uma sugestão abaixo.';
       nodes.suggestionList.replaceChildren();
       for (const name of similar) {
         const button = create('button', 'suggestion-button', guide.label(name));
@@ -91,7 +95,9 @@
       }
       nodes.suggestions.hidden = false;
     } catch {
-      // O erro original da pesquisa continua visível caso a lista não carregue.
+      if (!controller.signal.aborted) {
+        $('#status').textContent = 'Pokémon não encontrado. Não foi possível consultar sugestões agora.';
+      }
     }
   }
 
