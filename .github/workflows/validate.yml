@@ -16,6 +16,11 @@ jobs:
           node --check pokedex/enhancements.js
       - name: Run guide logic tests
         run: node --test tests/*.test.cjs
+      - name: Check opening experience
+        run: |
+          grep -q 'id="intro-overlay"' pokedex/index.html
+          grep -q 'intro-open-top' pokedex/style.css
+          ! grep -q 'CENTRAL DE EXPLORAÇÃO' pokedex/index.html
       - name: Check entrypoint files
         run: |
           test -s index.html
