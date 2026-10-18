@@ -480,3 +480,64 @@ a { color: inherit; }
   .tab-panel { animation: none !important; }
   .detail-tab { transition: none !important; }
 }
+
+/* v4: generation filtering and compact instant suggestions. */
+.generation-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 10px;
+}
+.generation-row label {
+  margin: 0;
+  color: #fff3e9;
+  font-size: 12px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+.generation-row select {
+  width: min(100%, 290px);
+  min-width: 0;
+  padding: 11px 33px 11px 12px;
+  border: 2px solid #841b28;
+  border-radius: 10px;
+  background: #223542;
+  color: #f0ffff;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.generation-row select:focus-visible {
+  outline: 3px solid #ffdb70;
+  outline-offset: 2px;
+}
+.search-form { position: relative; }
+.suggestions {
+  position: relative;
+  z-index: 3;
+  background: #182c36;
+  border: 1px solid #67a69e;
+  box-shadow: 0 8px 18px #0004;
+  max-height: 265px;
+  overflow-y: auto;
+  scrollbar-width: thin;
+}
+.suggestions > p { color: #d6f5e7; font-size: 11px; }
+.suggestion-list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; }
+.suggestion-button {
+  min-height: 38px;
+  font-size: 11px;
+  text-align: left;
+  overflow-wrap: anywhere;
+  border-color: #42746b;
+}
+#panel-abilities .ability {
+  overflow-wrap: anywhere;
+}
+@media (max-width: 460px) {
+  .generation-row { align-items: stretch; gap: 8px; }
+  .generation-row select { width: 100%; font-size: 11px; }
+  .suggestion-list { grid-template-columns: 1fr; }
+  .generation-row label { align-self: center; }
+}
