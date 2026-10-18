@@ -10,9 +10,16 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Check JavaScript syntax
-        run: node --check pokedex/script.js
+        run: |
+          node --check pokedex/script.js
+          node --check pokedex/guide.js
+          node --check pokedex/enhancements.js
+      - name: Run guide logic tests
+        run: node --test tests/*.test.cjs
       - name: Check entrypoint files
         run: |
           test -s index.html
           test -s pokedex/index.html
           test -s pokedex/style.css
+          test -s pokedex/guide.js
+          test -s pokedex/enhancements.js
