@@ -36,10 +36,15 @@ jobs:
           ! grep -q 'class="battle-guide"' pokedex/index.html
       - name: Check generation and suggestion UI
         run: |
-          grep -q 'id="generation-filter"' pokedex/index.html
+          grep -q 'id="game-filter"' pokedex/index.html
           grep -q 'id="suggestion-list"' pokedex/index.html
           grep -q 'ability-names.js?v=4' pokedex/index.html
-          grep -q 'search.js?v=4' pokedex/index.html
+          grep -q 'search.js?v=5' pokedex/index.html
+      - name: Verify game-based filter is not numeric-generation-based
+        run: |
+          grep -q 'version-group/' pokedex/search.js
+          grep -q 'pokedex/' pokedex/search.js
+          ! grep -q 'rangeFor(ui.generation' pokedex/script.js
       - name: Check entrypoint files
         run: |
           test -s index.html

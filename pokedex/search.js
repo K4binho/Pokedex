@@ -1,145 +1,231 @@
 'use strict';
 
-/* Search runs entirely in the browser, based on National Pokédex IDs.
- * One list request indexes names; exact searches still use the Pokémon endpoint.
+/* Game-based Pokédex filter.
+ * Never infer the set of Pokémon from their introduction generation.
+ * Instead, request each game's regional Pokédex through PokéAPI.
  */
 (() => {
   const api = window.PokedexCatalog;
   const locale = window.PokedexLocale;
   const input = document.getElementById('pokemon-search');
-  const generation = document.getElementById('generation-filter');
+  const gameSelect = document.getElementById('game-filter');
   const suggestionBox = document.getElementById('suggestions');
   const suggestionList = document.getElementById('suggestion-list');
   const status = document.getElementById('status');
-  let entries = [];
-  let indexPromise = null;
-  let timer = null;
-  let requestId = 0;
+  const API = 'https://pokeapi.co/api/v2/';
+  const cache = new Map();
+  let allEntries = [];
+  let allPromise = null;
+  let selectedGame = '';
+  let selectedEntries = [];
+  let typingTimer = null;
+  let searchRevision = 0;
+  let selectionRevision = 0;
 
-  function setGenerationLabels() {
-    const all = generation.options[0];
-    all.textContent = locale.t('search.genAll');
-    for (const row of api.GENERATIONS) {
-      const option = generation.querySelector('option[value="' + row.number + '"]');
-      if (!option) continue;
-      const prefix = locale.t('search.genSpecific', { number: row.number });
-      option.textContent = prefix + ' · #' + String(row.first).padStart(3, '0') +
-        '–' + String(row.last).padStart(3, '0');
+  const nameFor = gameId => api.getGame(gameId)?.title || '';
+  const activeEntries = () => selectedGame ? selectedEntries : allEntries;
+
+  function updateOptions() {
+    gameSelect.replaceChildren();
+    const all = document.createElement('option');
+    all.value = '';
+    all.textContent = locale.t('search.allGames');
+    gameSelect.append(all);
+    let previous = -1;
+    for (const game of api.GAMES) {
+      if (game.generation !== previous) {
+        const group = document.createElement('optgroup');
+        group.label = locale.t('search.gameGeneration', { number: game.generation });
+        gameSelect.append(group);
+        previous = game.generation;
+      }
+      const option = document.createElement('option');
+      option.value = game.id;
+      option.textContent = game.title;
+      gameSelect.lastElementChild.append(option);
     }
+    gameSelect.value = selectedGame;
   }
-  function hide() {
-    requestId++;
-    window.clearTimeout(timer);
+  function hideSuggestions() {
+    searchRevision++;
+    clearTimeout(typingTimer);
     suggestionBox.hidden = true;
     suggestionList.replaceChildren();
   }
-  function loadIndex() {
-    if (entries.length) return Promise.resolve(entries);
-    if (!indexPromise) {
-      indexPromise = fetch('https://pokeapi.co/api/v2/pokemon?limit=1025&offset=0')
+
+  async function request(resource) {
+    if (!cache.has(resource)) {
+      const pending = fetch(API + resource)
         .then(response => {
-          if (!response.ok) throw new Error('PokéAPI unavailable');
+          if (!response.ok) throw new Error('PokéAPI status ' + response.status);
           return response.json();
         })
-        .then(data => {
-          entries = api.parseEntries(data.results || []);
-          return entries;
-        })
-        .catch(error => {
-          indexPromise = null; // offline users can retry
-          throw error;
-        });
+        .catch(error => { cache.delete(resource); throw error; });
+      cache.set(resource, pending);
     }
-    return indexPromise;
+    return cache.get(resource);
   }
-  function suggest(query, notify = false) {
-    hide();
-    const search = api.normalize(query);
-    if (search.length < 2 || /^\d+$/.test(search)) return;
-    const id = requestId;
-    void loadIndex().then(all => {
-      if (id !== requestId || api.normalize(input.value) !== search) return;
-      const choices = api.rankMatches(search, all, Number(generation.value));
-      if (!choices.length) {
+
+  function loadNational() {
+    if (allEntries.length) return Promise.resolve(allEntries);
+    if (!allPromise) {
+      allPromise = request('pokemon?limit=1025&offset=0')
+        .then(data => {
+          allEntries = api.parseEntries(data.results || []);
+          if (!allEntries.length) throw new Error('Missing National Pokédex');
+          return allEntries;
+        })
+        .catch(error => { allPromise = null; throw error; });
+    }
+    return allPromise;
+  }
+
+  async function loadGame(gameId) {
+    const game = api.getGame(gameId);
+    if (!game) throw new Error('Unknown game');
+    // Version groups describe which regional Pokédexes the game introduced.
+    // Some editions reuse existing Pokédexes: the documented slugs cover those.
+    const versionGroup = await request('version-group/' + encodeURIComponent(game.id));
+    const names = [...new Set([
+      ...(versionGroup.pokedexes || []).map(item => item.name),
+      ...game.dexNames
+    ])];
+    const results = await Promise.allSettled(names.map(name =>
+      request('pokedex/' + encodeURIComponent(name))));
+    const dexes = results.filter(result => result.status === 'fulfilled')
+      .map(result => result.value);
+    if (!dexes.length) throw new Error('No Pokédex for game');
+    const entries = api.parseGameDexes(dexes);
+    if (!entries.length) throw new Error('Game Pokédex has no available entries');
+    return entries;
+  }
+
+  function contains(id) {
+    if (!selectedGame) return Number(id) >= 1 && Number(id) <= 1025;
+    return selectedEntries.some(entry => entry.id === Number(id));
+  }
+  function adjacent(id, direction) {
+    if (!selectedGame) {
+      const next = Number(id) + direction;
+      return next >= 1 && next <= 1025 ? next : null;
+    }
+    return api.adjacent(selectedEntries, Number(id), direction);
+  }
+  function random(currentId) {
+    const ids = activeEntries();
+    if (!selectedGame && !ids.length) {
+      let id = Math.floor(Math.random() * 1025) + 1;
+      if (id === currentId) id = id % 1025 + 1;
+      return id;
+    }
+    if (!ids.length) return null;
+    let index = Math.floor(Math.random() * ids.length);
+    if (ids.length > 1 && ids[index].id === currentId) index = (index + 1) % ids.length;
+    return ids[index].id;
+  }
+
+  function showSuggestions(raw, notify = false) {
+    hideSuggestions();
+    const query = api.normalize(raw);
+    if (query.length < 2 || /^\d+$/.test(query)) return;
+    const revision = searchRevision;
+    const ready = selectedGame ? Promise.resolve(selectedEntries) : loadNational();
+    void ready.then(entries => {
+      if (revision !== searchRevision || api.normalize(input.value) !== query) return;
+      const suggestions = api.rankMatches(query, entries);
+      if (!suggestions.length) {
         if (notify) status.textContent = locale.t('status.noSuggest');
         return;
       }
-      for (const choice of choices) {
+      for (const suggestion of suggestions) {
         const button = document.createElement('button');
         button.type = 'button';
         button.className = 'suggestion-button';
-        button.textContent = window.PokedexGuide.label(choice.name) +
-          '  #' + String(choice.id).padStart(4, '0');
+        button.textContent = window.PokedexGuide.label(suggestion.name) +
+          '  #' + String(suggestion.id).padStart(4, '0');
         button.addEventListener('click', () => {
-          hide();
-          window.PokedexApp.loadPokemon(choice.id);
+          hideSuggestions();
+          window.PokedexApp.loadPokemon(suggestion.id);
         });
         suggestionList.append(button);
       }
       suggestionBox.hidden = false;
       if (notify) status.textContent = locale.t('status.suggest');
     }).catch(() => {
-      if (id === requestId && notify) status.textContent = locale.t('status.suggestError');
+      if (revision === searchRevision && notify) status.textContent = locale.t('status.suggestError');
     });
   }
 
+  async function selectGame(nextGame, { restore = false } = {}) {
+    const version = ++selectionRevision;
+    hideSuggestions();
+    gameSelect.disabled = true;
+    status.textContent = locale.t('status.gameLoading');
+    try {
+      const entries = nextGame ? await loadGame(nextGame) : await loadNational();
+      if (version !== selectionRevision) return;
+      selectedGame = nextGame;
+      selectedEntries = entries;
+      gameSelect.value = nextGame;
+      try { localStorage.setItem('k4-pokedex-game-v1', nextGame); }
+      catch { /* optional persistence */ }
+      window.PokedexApp.refreshNavigation();
+      const current = window.PokedexApp.currentPokemon;
+      const keepCurrent = current && contains(current.id);
+      if (keepCurrent) {
+        status.textContent = nextGame
+          ? locale.t('status.gameSelected', { game: nameFor(nextGame), count: entries.length })
+          : locale.t('status.allGames');
+      } else {
+        // Open the first Pokémon in the selected game's Pokédex.
+        window.PokedexApp.loadPokemon(entries[0].id);
+      }
+    } catch {
+      if (version !== selectionRevision) return;
+      gameSelect.value = selectedGame;
+      status.textContent = locale.t('status.gameError');
+      status.dataset.error = 'true';
+    } finally {
+      if (version === selectionRevision) gameSelect.disabled = false;
+    }
+    if (restore && input.value.trim()) showSuggestions(input.value);
+  }
+
+  gameSelect.addEventListener('change', () => {
+    void selectGame(gameSelect.value);
+  });
   input.addEventListener('input', () => {
-    hide();
-    const query = input.value;
-    if (api.normalize(query).length < 2) return;
-    timer = window.setTimeout(() => suggest(query), 170);
+    hideSuggestions();
+    const value = input.value;
+    if (api.normalize(value).length < 2) return;
+    typingTimer = setTimeout(() => showSuggestions(value), 170);
   });
   input.addEventListener('focus', () => {
-    if (api.normalize(input.value).length >= 2) suggest(input.value);
+    if (api.normalize(input.value).length >= 2) showSuggestions(input.value);
   });
-  document.addEventListener('pokedex:search-start', hide);
+  document.addEventListener('pokedex:search-start', hideSuggestions);
   document.addEventListener('pokedex:not-found', event => {
-    suggest(event.detail.query, true);
+    showSuggestions(event.detail.query, true);
   });
-  document.addEventListener('pokedex:pokemon', hide);
-
-  generation.addEventListener('change', () => {
-    hide();
-    try { localStorage.setItem('k4-pokedex-generation-v1', generation.value); }
-    catch { /* storage is optional */ }
-    const range = api.rangeFor(generation.value);
-    window.PokedexApp.refreshNavigation();
-    if (Number(generation.value)) {
-      status.textContent = locale.t('status.genSelected', { number: range.number });
-    }
-    const current = window.PokedexApp.currentPokemon;
-    // Selecting a generation immediately displays the first entry when necessary.
-    if (!current || !api.inGeneration(current.id, Number(generation.value))) {
-      window.PokedexApp.loadPokemon(range.first);
-    } else if (api.normalize(input.value).length >= 2) {
-      suggest(input.value);
-    }
-  });
-
+  document.addEventListener('pokedex:pokemon', hideSuggestions);
   document.addEventListener('pokedex:language-change', () => {
-    setGenerationLabels();
-    if (!suggestionBox.hidden) suggest(input.value);
+    updateOptions();
+    if (!suggestionBox.hidden) showSuggestions(input.value);
   });
 
   try {
-    const selected = localStorage.getItem('k4-pokedex-generation-v1');
-    if (api.GENERATIONS.some(g => String(g.number) === selected)) {
-      generation.value = selected;
+    const saved = localStorage.getItem('k4-pokedex-game-v1') || '';
+    if (api.getGame(saved)) {
+      // Restored games are loaded after core application initialization.
+      window.setTimeout(() => { gameSelect.value = saved; void selectGame(saved, { restore: true }); }, 0);
     }
-  } catch { /* storage is optional */ }
-  setGenerationLabels();
-  if (Number(generation.value) !== 0) {
-    const range = api.rangeFor(generation.value);
-    let remembered = 1;
-    try { remembered = Number(JSON.parse(localStorage.getItem('k4-pokedex-last-v1'))); }
-    catch { /* previous selection unavailable */ }
-    if (!api.inGeneration(remembered, Number(generation.value))) {
-      // Ensure the initial view respects a saved generation.
-      window.PokedexApp.loadPokemon(range.first);
-    }
-    window.PokedexApp.refreshNavigation();
-  }
-  window.PokedexSearch = { suggest, hide, get generation() { return Number(generation.value); } };
-  // Preload the index without delaying the visible Pokémon details.
-  void loadIndex().catch(() => {});
+  } catch { /* optional storage */ }
+  updateOptions();
+  window.PokedexSearch = {
+    get game() { return selectedGame; },
+    get entries() { return activeEntries(); },
+    contains, adjacent, random, hide: hideSuggestions
+  };
+  // Preload names for the unfiltered live search without blocking first paint.
+  void loadNational().catch(() => {});
 })();

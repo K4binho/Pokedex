@@ -7,36 +7,53 @@ const path = require('node:path');
 const catalog = require('../pokedex/catalog.js');
 const names = require('../pokedex/ability-names.js');
 
-test('generation ranges cover 1 to 1025 exactly once', () => {
-  assert.equal(catalog.GENERATIONS.length, 9);
-  assert.equal(catalog.rangeFor(0).first, 1);
-  assert.equal(catalog.rangeFor(0).last, 1025);
-  assert.equal(catalog.GENERATIONS[0].last, 151);
-  assert.equal(catalog.GENERATIONS[8].first, 906);
-  for (let id = 1; id <= 1025; id++) {
-    assert.equal(catalog.GENERATIONS.filter(x => id >= x.first && id <= x.last).length, 1);
-  }
-  assert.equal(catalog.inGeneration(152, 1), false);
-  assert.equal(catalog.inGeneration(152, 2), true);
-  assert.equal(catalog.inGeneration(1026, 0), false);
+test('game choices are grouped into nine game generations, not species-ID ranges', () => {
+  const games = catalog.GAMES;
+  assert.ok(games.length >= 20);
+  assert.deepEqual([...new Set(games.map(g => g.generation))], [1,2,3,4,5,6,7,8,9]);
+  assert.equal(catalog.getGame('gold-silver').title, 'Gold / Silver');
+  assert.equal(catalog.getGame('scarlet-violet').generation, 9);
+  assert.equal(catalog.getGame('nonexistent'), null);
 });
-test('smart names match prefixes, misspellings and transposed letters', () => {
-  const index = catalog.parseEntries([
-    { name: 'pikachu', url: 'https://pokeapi.co/api/v2/pokemon/25/' },
-    { name: 'pidgey', url: 'https://pokeapi.co/api/v2/pokemon/16/' },
-    { name: 'charmander', url: 'https://pokeapi.co/api/v2/pokemon/4/' },
-    { name: 'chikorita', url: 'https://pokeapi.co/api/v2/pokemon/152/' },
-    { name: 'celebi', url: 'https://pokeapi.co/api/v2/pokemon/251/' }
-  ]);
-  assert.equal(catalog.rankMatches('pikach', index)[0].name, 'pikachu');
-  assert.equal(catalog.rankMatches('pikahcu', index)[0].name, 'pikachu');
-  assert.equal(catalog.rankMatches('charmadner', index)[0].name, 'charmander');
-  assert.equal(catalog.rankMatches('Chiko', index, 2)[0].name, 'chikorita');
-  assert.equal(catalog.rankMatches('pik', index, 2).length, 0);
-  assert.equal(catalog.rankMatches('#25', index, 1)[0].name, 'pikachu');
-  assert.equal(catalog.rankMatches('#25', index, 2).length, 0);
+
+test('regional Pokédexes include earlier Pokémon and keep in-game order', () => {
+  const dexes = [{
+    name: 'original-johto',
+    pokemon_entries: [
+      { entry_number: 3, pokemon_species: { name: 'pikachu', url: 'https://pokeapi.co/api/v2/pokemon-species/25/' } },
+      { entry_number: 1, pokemon_species: { name: 'chikorita', url: 'https://pokeapi.co/api/v2/pokemon-species/152/' } },
+      { entry_number: 2, pokemon_species: { name: 'bulbasaur', url: 'https://pokeapi.co/api/v2/pokemon-species/1/' } }
+    ]
+  }, {
+    name: 'additional',
+    pokemon_entries: [
+      { entry_number: 1, pokemon_species: { name: 'chikorita', url: 'https://pokeapi.co/api/v2/pokemon-species/152/' } },
+      { entry_number: 2, pokemon_species: { name: 'celebi', url: 'https://pokeapi.co/api/v2/pokemon-species/251/' } }
+    ]
+  }];
+  const members = catalog.parseGameDexes(dexes);
+  assert.deepEqual(members.map(p => p.id), [152, 1, 25, 251]);
+  assert.equal(catalog.adjacent(members, 152, 1), 1);
+  assert.equal(catalog.adjacent(members, 1, -1), 152);
+  assert.equal(catalog.adjacent(members, 251, 1), null);
+  assert.equal(catalog.adjacent(members, 999, -1), null);
+});
+
+test('fuzzy search respects Pokédex membership, not the generation in which a Pokémon debuted', () => {
+  const members = [
+    { id: 25, name: 'pikachu' },
+    { id: 152, name: 'chikorita' },
+    { id: 251, name: 'celebi' }
+  ];
+  assert.equal(catalog.rankMatches('pikach', members)[0].id, 25);
+  assert.equal(catalog.rankMatches('pikahcu', members)[0].id, 25);
+  assert.equal(catalog.rankMatches('chiko', members)[0].id, 152);
+  assert.equal(catalog.rankMatches('chikortia', members)[0].id, 152);
+  assert.equal(catalog.rankMatches('#25', members)[0].id, 25);
+  assert.equal(catalog.rankMatches('#4', members).length, 0);
   assert.equal(catalog.normalize('Nidoran♀'), 'nidoran-f');
 });
+
 test('Brazilian Portuguese names cover familiar abilities and preserve original identifiers', () => {
   assert.ok(Object.keys(names).length >= 250);
   assert.equal(names.intimidate, 'Intimidação');
