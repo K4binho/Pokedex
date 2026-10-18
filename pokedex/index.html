@@ -8,15 +8,15 @@
   <link rel="icon" type="image/png" href="./icon.png">
   <link rel="preconnect" href="https://pokeapi.co">
   <link rel="preconnect" href="https://raw.githubusercontent.com">
-  <link rel="stylesheet" href="./style.css?v=4">
+  <link rel="stylesheet" href="./style.css?v=5">
   <script src="./guide.js?v=3" defer></script>
   <script src="./ability-names.js?v=4" defer></script>
-  <script src="./catalog.js?v=4" defer></script>
-  <script src="./i18n.js?v=4" defer></script>
+  <script src="./catalog.js?v=5" defer></script>
+  <script src="./i18n.js?v=5" defer></script>
   <script src="./enhancements.js?v=4" defer></script>
-  <script src="./script.js?v=4" defer></script>
+  <script src="./script.js?v=5" defer></script>
   <script src="./tabs.js?v=4" defer></script>
-  <script src="./search.js?v=4" defer></script>
+  <script src="./search.js?v=5" defer></script>
   <title>Pokédex — Explore o mundo Pokémon</title>
 </head>
 <body>
@@ -75,21 +75,12 @@
               <button class="btn btn-search" type="submit"><span data-i18n="search.button">Buscar ↗</span></button>
             </div>
             <div class="generation-row">
-              <label for="generation-filter" data-i18n="search.generation">Geração</label>
-              <select id="generation-filter" name="generation" aria-label="Geração">
-                <option value="0" data-i18n="search.genAll">Todas as gerações</option>
-                <option value="1">1ª geração · #001–151</option>
-                <option value="2">2ª geração · #152–251</option>
-                <option value="3">3ª geração · #252–386</option>
-                <option value="4">4ª geração · #387–493</option>
-                <option value="5">5ª geração · #494–649</option>
-                <option value="6">6ª geração · #650–721</option>
-                <option value="7">7ª geração · #722–809</option>
-                <option value="8">8ª geração · #810–905</option>
-                <option value="9">9ª geração · #906–1025</option>
+              <label for="game-filter" data-i18n="search.gameLabel">Jogo</label>
+              <select id="game-filter" name="game" aria-label="Jogo Pokémon" data-i18n-aria="search.gameLabel">
+                <option value="" data-i18n="search.allGames">Todos os jogos</option>
               </select>
             </div>
-            <p id="search-help" class="search-hint" data-i18n="search.help">Digite um nome, número ou escolha uma geração.</p>
+            <p id="search-help" class="search-hint" data-i18n="search.gameHelp">Filtra pela Pokédex regional do jogo (não apenas pela geração de estreia).</p>
             <div id="suggestions" class="suggestions" role="region" aria-label="Sugestões de Pokémon" data-i18n-aria="search.suggest" hidden>
               <p data-i18n="search.similar">Não encontramos esse nome. Você quis dizer:</p>
               <div id="suggestion-list" class="suggestion-list"></div>
