@@ -1,69 +1,99 @@
-<!DOCTYPE html>
-<html lang="pt-br">
-    
+<!doctype html>
+<html lang="pt-BR">
 <head>
-    <meta charset="UTF-8">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="style.css" >
-    <link rel="stylesheet" href="styleParteII.css" >
-    <script src="script.js" defer></script>
-    <link rel="icon" type="image/gif/jpg" sizes="32x32" href="icon.png"/>
-    <title>Pokédex</title>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#d52937">
+  <meta name="description" content="Explore Pokémon por nome ou número nesta Pokédex interativa. Veja tipos, atributos, habilidades e salve seus favoritos.">
+  <link rel="icon" type="image/png" href="./icon.png">
+  <link rel="preconnect" href="https://pokeapi.co">
+  <link rel="preconnect" href="https://raw.githubusercontent.com">
+  <link rel="stylesheet" href="./style.css">
+  <script src="./script.js" defer></script>
+  <title>Pokédex — Explore o mundo Pokémon</title>
 </head>
-
 <body>
+  <a class="skip-link" href="#main">Ir para o conteúdo</a>
+  <header class="site-header">
+    <a class="brand" href="./" aria-label="Pokédex, página inicial"><span class="brand-ball" aria-hidden="true"></span> POKÉDEX <span class="brand-edition">/ CLASSIC</span></a>
+    <span class="header-caption">Um Pokémon de cada vez</span>
+  </header>
 
-    <!-- começo da Pokédex logo -->
-<div class="logo">
-<img 
-src="https://1.bp.blogspot.com/-0V4itR_v87M/UtsCF-ehNYI/AAAAAAAABjU/UEQ5Jiy_85o/s1600/pokedex-3d-logo.png"
-height="100%"
-alt="logo_pokedex"/>
-</div>
-    <!-- Fim da Pokédex logo    -->
-
-    <!-- começo da pokédex top -->
-<div class="top">
-    <!-- começo do top -->
-    <div class="top-esquerdo">
-        <div class="circuloGrande sombra"></div>
-        <div class="circuloPequeno R sombra"></div>
-        <div class="circuloPequeno Y sombra"></div>
-        <div class="circuloPequeno G sombra"></div>
+  <main id="main" class="page">
+    <div class="introduction">
+      <p class="eyebrow">CENTRAL DE EXPLORAÇÃO // 001—1025</p>
+      <h1>Descubra o próximo <span>Pokémon.</span></h1>
+      <p>Pesquise, explore os atributos e monte sua lista de favoritos em uma Pokédex com visual retrô.</p>
     </div>
-     <!-- fim do top   -->
-</div>
-    <!-- fim da pokédex top   -->
 
-    <!-- começo do corpo   -->
-<div class="corpo-esquerdo">
-    <div class="lado-esquerdo">
-        <div class="efeitoTelaPokemon">
-            <div class="botaoLinha">
-                <div class="analogico"></div>
-                <div class="bolinhaVermelha"></div>
-                <div class="bolinhaVermelha2"></div>
-                <div class="bolinhaVermelha3"></div>
-                <div class="linha1"></div>
-                <div class="linha2"></div>
-                <div class="linha3"></div>
-                <div class="linha4"></div>
-                <div class="linha5"></div>
-                <div class="linha6"></div>
+    <section class="pokedex" aria-label="Pokédex interativa">
+      <div class="device-top" aria-hidden="true">
+        <div class="lens"><span></span></div>
+        <div class="signal signal-red"></div>
+        <div class="signal signal-yellow"></div>
+        <div class="signal signal-green"></div>
+        <span class="device-label">K4 / POKÉDEX SYSTEM</span>
+      </div>
+
+      <div class="device-body">
+        <section class="left-panel" aria-label="Visualização do Pokémon">
+          <div class="screen-frame">
+            <div class="screen-top"><span class="camera-dot"></span><span>POKÉMON VIEWER</span><span id="screen-id">#0001</span></div>
+            <div class="screen" id="screen">
+              <div class="scanlines" aria-hidden="true"></div>
+              <span class="screen-tag">REGISTRO NACIONAL</span>
+              <img id="pokemon-image" class="pokemon-image" alt="Ilustração de Bulbasaur" src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/1.png" width="270" height="270" decoding="async">
+              <span id="artwork-fallback" class="artwork-fallback" hidden>Imagem indisponível</span>
+              <div class="screen-bottom"><h2 id="pokemon-name">Bulbasaur</h2><span class="screen-indicator" aria-hidden="true"></span></div>
             </div>
-            <div class="telaDoPokemon">
-                <h2 class="nome">bulbasaur</h2>
-                <img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/1.png" class="img"  width="100vw" height="100vh"> 
+            <div class="screen-footer"><span class="screen-led" aria-hidden="true"></span><span class="speaker" aria-hidden="true"></span></div>
+          </div>
+
+          <form id="search-form" class="search-form" role="search">
+            <label for="pokemon-search">Buscar Pokémon</label>
+            <div class="search-row">
+              <input id="pokemon-search" name="pokemon" type="search" autocomplete="off" spellcheck="false" enterkeyhint="search" maxlength="60" placeholder="Nome ou número. Ex.: pikachu" aria-describedby="search-help">
+              <button class="btn btn-search" type="submit">Buscar <span aria-hidden="true">↗</span></button>
             </div>
-        </div>
+            <p id="search-help" class="search-hint">Pesquise por nome ou número da Pokédex Nacional.</p>
+          </form>
 
-        <label for="poke"></label><br><br>
-        <input id="poke" type="text" placeholder="Pokemon / id"> <br>
-        
-        <img id="cross" src="key-cross.png" alt="key-cross.png">
-    </div>
-</div>
-     <!-- fim do corpo   -->
+          <div class="controls">
+            <div class="directional" role="group" aria-label="Navegação entre Pokémon">
+              <button id="previous" type="button" class="arrow-button" aria-label="Pokémon anterior" title="Pokémon anterior">←</button>
+              <button id="next" type="button" class="arrow-button" aria-label="Próximo Pokémon" title="Próximo Pokémon">→</button>
+            </div>
+            <button id="random" class="btn btn-ghost" type="button">Aleatório <span aria-hidden="true">⤨</span></button>
+            <button id="favorite" class="btn btn-favorite" type="button" aria-pressed="false" aria-label="Adicionar Pokémon aos favoritos"><span aria-hidden="true">♡</span> Favoritar</button>
+          </div>
+          <p id="status" class="status" role="status" aria-live="polite">Preparando sua Pokédex...</p>
+        </section>
 
+        <section class="right-panel" aria-label="Dados do Pokémon">
+          <div class="panel-heading"><span class="panel-number">01 / DATA</span><span class="panel-dot" aria-hidden="true"></span></div>
+          <div class="details-heading"><div><p class="eyebrow">REGISTRO IDENTIFICADO</p><h2 id="detail-name">Bulbasaur</h2></div><span id="detail-id" class="number-badge">#0001</span></div>
+          <div id="types" class="types" aria-label="Tipos do Pokémon"></div>
+
+          <div class="measurements">
+            <div><span>ALTURA</span><strong id="height">—</strong></div>
+            <div><span>PESO</span><strong id="weight">—</strong></div>
+          </div>
+
+          <div class="section-heading"><h3>Estatísticas base</h3><span>BASE STATS</span></div>
+          <div id="stats" class="stats" aria-label="Estatísticas do Pokémon"></div>
+
+          <div class="section-heading"><h3>Habilidades</h3><span>ABILITIES</span></div>
+          <div id="abilities" class="abilities"></div>
+
+          <div class="favorites-heading"><div class="section-heading"><h3>Meus favoritos</h3><span>LOCAL</span></div><button id="clear-favorites" class="text-button" type="button" hidden>Limpar</button></div>
+          <div id="favorites-list" class="favorites-list"><p class="empty-message">Nenhum favorito ainda.</p></div>
+          <p class="storage-note">Favoritos salvos apenas neste navegador.</p>
+        </section>
+      </div>
+      <div class="device-bottom" aria-hidden="true"><span>EST. 1996</span><span>POKÉDEX // ONLINE</span></div>
+    </section>
+
+    <footer class="footer">Dados fornecidos por <a href="https://pokeapi.co/" target="_blank" rel="noopener noreferrer">PokéAPI</a>. Projeto independente, não afiliado à Nintendo, Game Freak ou The Pokémon Company.</footer>
+  </main>
 </body>
+</html>
