@@ -16,6 +16,9 @@ jobs:
           node --check pokedex/enhancements.js
           node --check pokedex/i18n.js
           node --check pokedex/tabs.js
+          node --check pokedex/search.js
+          node --check pokedex/catalog.js
+          node --check pokedex/ability-names.js
       - name: Run guide logic tests
         run: node --test tests/*.test.cjs
       - name: Check opening experience
@@ -31,6 +34,12 @@ jobs:
           grep -q 'id="guide-encounters"' pokedex/index.html
           grep -q 'id="panel-favorites"' pokedex/index.html
           ! grep -q 'class="battle-guide"' pokedex/index.html
+      - name: Check generation and suggestion UI
+        run: |
+          grep -q 'id="generation-filter"' pokedex/index.html
+          grep -q 'id="suggestion-list"' pokedex/index.html
+          grep -q 'ability-names.js?v=4' pokedex/index.html
+          grep -q 'search.js?v=4' pokedex/index.html
       - name: Check entrypoint files
         run: |
           test -s index.html
@@ -40,3 +49,6 @@ jobs:
           test -s pokedex/enhancements.js
           test -s pokedex/i18n.js
           test -s pokedex/tabs.js
+          test -s pokedex/search.js
+          test -s pokedex/catalog.js
+          test -s pokedex/ability-names.js
