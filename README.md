@@ -6,7 +6,7 @@ Pokédex interativa com visual de duas telas, construída em **HTML, CSS e JavaS
 
 ## Interface
 
-A primeira tela mostra a imagem, a pesquisa inteligente com sugestões enquanto você digita e o filtro das gerações 1ª a 9ª. Ao escolher uma geração, a navegação anterior/próximo e o botão aleatório respeitam sua seleção. **Todos os detalhes ficam na segunda tela** em seis abas:
+A primeira tela mostra a imagem, a pesquisa inteligente com sugestões e o **seletor dos jogos Pokémon**, agrupados pela geração dos jogos (I–IX). Ao escolher uma edição, anterior, próximo e aleatório passam a percorrer os registros da Pokédex do jogo, preservando a ordem do catálogo correspondente. **Todos os detalhes ficam na segunda tela** em seis abas:
 
 | Aba | Informações |
 | --- | --- |
@@ -21,10 +21,22 @@ Os botões das abas ocupam a segunda tela sem empilhar os painéis sob a Pokéde
 
 O cabeçalho permite alternar entre **PT-BR e English**, sem atualizar a página. Os nomes das habilidades conhecidas têm traduções livres em português, tanto no resumo quanto nos detalhes; para termos raros ainda não traduzidos, o nome original em inglês é mantido em vez de apresentar uma tradução não verificada. O idioma fica salvo no navegador. Os nomes canônicos de Pokémon e golpes permanecem identificáveis pela PokéAPI; descrições sem tradução podem aparecer em inglês.
 
+## Filtro por jogo: diferença importante
+
+O filtro não usa a geração em que cada espécie estreou e **não** corresponde a intervalos de números da Pokédex Nacional.
+
+- Os jogos aparecem agrupados por geração: **I (Red/Blue, Yellow)**, **II (Gold/Silver, Crystal)**, e assim por diante até **IX (Scarlet/Violet)**.
+- A seleção consulta `version-group/{jogo}` e os recursos `pokedex/{região}` da PokéAPI, combinando Pokédex regionais adicionais quando disponíveis. Isso inclui Pokémon de gerações anteriores que constam na Pokédex daquele jogo.
+- O filtro representa os Pokémon **registrados na Pokédex do jogo**, e não todos os Pokémon obtidos por transferência, eventos, trocas ou atualizações sem Pokédex própria.
+- Se a PokéAPI não possuir dados suficientes para uma edição, o site informa a falha sem atribuir Pokémon incorretamente àquele jogo.
+- A lista de referência cobre as espécies nacionais de 1 a 1025; formas especiais compartilham a espécie base quando aplicável.
+
+A seleção é salva de forma independente do antigo filtro numérico, para evitar preferências incorretas após a atualização.
+
 ## Recursos adicionais
 
 - Animação de Pokébola abrindo o site (respeita preferência por movimento reduzido).
-- Busca por nome ou número, sugestões em tempo real para digitação parcial e erros comuns, e filtro de gerações I–IX (IDs 1–1025).
+- Busca por nome ou número, sugestões em tempo real para digitação parcial e erros comuns, e filtro pelas Pokédex dos jogos (Red/Blue, Gold/Silver, Ruby/Sapphire, X/Y, Sword/Shield, Scarlet/Violet etc.).
 - Navegação anterior, próximo e Pokémon aleatório.
 - Arte oficial e sprite alternativo.
 - Favoritos persistidos localmente (até 50).
@@ -78,8 +90,8 @@ pokedex/guide.js            # Regras puras de nomes, evolução, tipos e golpes
 pokedex/enhancements.js     # Consultas sob demanda e conteúdo das abas
 pokedex/i18n.js             # Português / inglês com preferência persistente
 pokedex/tabs.js             # Navegação e foco acessível entre abas
-pokedex/catalog.js          # Regras de pesquisa e limites por geração
-pokedex/search.js           # Autocompletar e filtro de geração
+pokedex/catalog.js          # Grupos de jogos, dados das Pokédex e busca inteligente
+pokedex/search.js           # Autocompletar e seleção da Pokédex de cada jogo
 pokedex/ability-names.js    # Glossário PT-BR (traduções livres)
 tests/*.test.cjs            # Testes automatizados Node
 ```
