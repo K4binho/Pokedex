@@ -182,11 +182,13 @@
     return results;
   }
   function pickMovePool(moves, limit = 12) {
-    const preferred = moves.filter(move => MOVES_PRIORITY.has(move.name) || MOVES_SUPPORT.has(move.name))
-      .sort((a, b) => Number(MOVES_SUPPORT.has(b.name)) - Number(MOVES_SUPPORT.has(a.name)));
-    const fallback = moves.filter(move => !MOVES_PRIORITY.has(move.name) && !MOVES_SUPPORT.has(move.name))
+    const preferredAttacks = moves.filter(move => MOVES_PRIORITY.has(move.name));
+    const preferredSupport = moves.filter(move => MOVES_SUPPORT.has(move.name));
+    const fallback = moves.filter(move =>
+      !MOVES_PRIORITY.has(move.name) && !MOVES_SUPPORT.has(move.name))
       .sort((a, b) => b.level - a.level);
-    return [...preferred.slice(0, Math.max(0, limit - 4)), ...fallback.slice(0, 4)]
+    const prioritized = [...preferredAttacks.slice(0, 6), ...preferredSupport.slice(0, 3)];
+    return [...prioritized, ...fallback.slice(0, Math.max(0, limit - prioritized.length))]
       .slice(0, limit);
   }
   function recommendMoves(pokemon, candidates) {
