@@ -185,6 +185,7 @@ function renderPokemon(data) {
   ui.input.value = '';
   persist(LAST_KEY, data.id);
   renderFavorites();
+  document.dispatchEvent(new CustomEvent('pokedex:pokemon', { detail: { pokemon: data } }));
 }
 
 async function loadPokemon(query) {
@@ -199,6 +200,7 @@ async function loadPokemon(query) {
     return;
   }
 
+  document.dispatchEvent(new CustomEvent('pokedex:search-start'));
   if (activeRequest) activeRequest.abort();
   const controller = new AbortController();
   activeRequest = controller;
@@ -219,7 +221,8 @@ async function loadPokemon(query) {
     if (error.name === 'AbortError') {
       setStatus('A consulta demorou demais. Tente novamente.', true);
     } else if (error.message === 'not-found') {
-      setStatus('Pokémon não encontrado. Confira o nome ou número.', true);
+      setStatus('Pokémon não encontrado. Procurando nomes parecidos...', true);
+      document.dispatchEvent(new CustomEvent('pokedex:not-found', { detail: { query: search } }));
     } else {
       setStatus('Falha de conexão com a PokéAPI. Verifique sua internet e tente novamente.', true);
     }

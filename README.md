@@ -1,10 +1,20 @@
 # Pokédex Classic
 
-**[Abrir Pokédex online](https://k4binho.github.io/Pokedex/)** — disponível após ativar o GitHub Pages no repositório.
+**[Abrir Pokédex online](https://k4binho.github.io/Pokedex/)** — hospedada gratuitamente no GitHub Pages.
 
 Uma Pokédex responsiva inspirada no dispositivo clássico, construída com **HTML, CSS e JavaScript puro** e dados da [PokéAPI](https://pokeapi.co/).
 
 ## Recursos
+
+- **Abertura com animação:** Pokébola centralizada entra na tela e se abre para revelar o site. Respeita a opção do sistema para reduzir animações.
+- **Busca inteligente:** ao digitar um nome incorreto (por exemplo, "pikach"), a Pokédex sugere nomes semelhantes e permite abrir a opção correta com um clique.
+- **Guia do treinador:** perfil de batalha, naturezas e prioridades de atributos sugeridas; fraquezas, resistências, imunidades e multiplicadores de dano.
+- **Evoluções:** família completa, inclusive ramificações, condições (nível, item, troca, amizade, horário etc.) e navegação entre as etapas.
+- **Habilidades:** descrições explicativas e destaque estimado de habilidades com bom potencial geral.
+- **Golpes sugeridos por jogo:** escolha do grupo de versões da PokéAPI; até quatro golpes escolhidos por critérios heurísticos (STAB, atributos, poder, precisão e funções de apoio). Exibe categoria e método de aprendizado.
+
+**Atenção:** a PokéAPI fornece dados dos jogos; as recomendações são heurísticas e não pretendem representar builds competitivas oficiais. Evoluções e movimentos podem variar conforme geração, edição e regras específicas. Alguns textos de habilidades podem aparecer em inglês quando não há resumo em português.
+
 
 - Pesquisa de Pokémon por nome ou número (1–1025), incluindo nomes com espaços e variações de maiúsculas/minúsculas.
 - Navegação anterior/próximo, botão aleatório e atalhos de teclado **← / →** quando nenhum campo ou botão está selecionado.
@@ -40,9 +50,12 @@ Após essa ativação, cada atualização na branch `main` será publicada autom
 
 ```bash
 node --check pokedex/script.js
+node --check pokedex/guide.js
+node --check pokedex/enhancements.js
+node --test tests/*.test.cjs
 ```
 
-Checklist manual: buscar por nome e ID; testar inexistente e sem conexão; navegar nos limites 1 e 1025; favoritar/remover e recarregar; usar teclado; inspecionar layout em telas pequenas. O fluxo do GitHub Actions faz a verificação de sintaxe do JavaScript, mas não substitui testes visuais e funcionais no navegador.
+Checklist manual: pesquisar por nome correto e nome incorreto; clicar nas sugestões; trocar versões do jogo; abrir evoluções ramificadas (ex.: Eevee); conferir imunidades por tipo; verificar favoritos, erros de rede, teclado e layout móvel. A automação verifica sintaxe e regras de recomendação, mas não substitui testes visuais e funcionais no navegador.
 
 ## Organização
 
@@ -51,6 +64,9 @@ index.html                 # redirecionamento de entrada
 pokedex/index.html         # interface
 pokedex/style.css          # layout responsivo e tema retrô
 pokedex/script.js          # API, navegação e favoritos
+pokedex/guide.js           # lógica testável de buscas, evolução e estratégia
+pokedex/enhancements.js    # carregamento assíncrono e interface do guia
+tests/guide.test.cjs       # testes automatizados
 pokedex/*.png              # imagens originais mantidas no projeto
 ```
 
