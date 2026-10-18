@@ -194,7 +194,7 @@ function renderPokemon(data, preserveInput = false) {
 }
 
 async function loadPokemon(query) {
-  const search = normalizeQuery(String(query));
+  const search = window.PokedexCatalog.normalize(String(query));
   if (!search) {
     setStatus(tr('status.empty'), true);
     ui.input.focus();
