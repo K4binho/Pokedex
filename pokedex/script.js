@@ -12,6 +12,7 @@ const $ = (selector) => document.querySelector(selector);
 const ui = {
   form: $('#search-form'),
   input: $('#pokemon-search'),
+  generation: $('#generation-filter'),
   status: $('#status'),
   screen: $('#screen'),
   image: $('#pokemon-image'),
@@ -178,12 +179,14 @@ function renderPokemon(data, preserveInput = false) {
   data.abilities.forEach(({ ability, is_hidden: hidden }) => {
     const item = document.createElement('span');
     item.className = 'ability';
-    item.textContent = formatName(ability.name) + (hidden ? ' · ' + tr('guide.ability.hidden') : '');
+    item.textContent = locale.ability(ability.name) + (hidden ? ' · ' + tr('guide.ability.hidden') : '');
+    item.title = formatName(ability.name);
     ui.abilities.append(item);
   });
 
-  ui.previous.disabled = data.id <= 1;
-  ui.next.disabled = data.id >= MAX_POKEMON;
+  const currentRange = window.PokedexCatalog.rangeFor(ui.generation.value);
+  ui.previous.disabled = data.id <= currentRange.first || data.id > currentRange.last;
+  ui.next.disabled = data.id >= currentRange.last || data.id < currentRange.first;
   if (!preserveInput) ui.input.value = '';
   persist(LAST_KEY, data.id);
   renderFavorites();
@@ -202,6 +205,12 @@ async function loadPokemon(query) {
     return;
   }
 
+  const generation = Number(ui.generation.value);
+  const range = window.PokedexCatalog.rangeFor(generation);
+  if (/^\d+$/.test(search) && !window.PokedexCatalog.inGeneration(Number(search), generation)) {
+    setStatus(tr('status.outsideGen', { name: '#' + search }), true);
+    return;
+  }
   document.dispatchEvent(new CustomEvent('pokedex:search-start'));
   if (activeRequest) activeRequest.abort();
   const controller = new AbortController();
@@ -216,6 +225,11 @@ async function loadPokemon(query) {
     if (!response.ok) throw new Error('api-error');
     const data = await response.json();
     if (controller !== activeRequest) return;
+    // A filter may change while a fetch is in flight.
+    if (!window.PokedexCatalog.inGeneration(data.id, Number(ui.generation.value))) {
+      setStatus(tr('status.outsideGen', { name: formatName(data.name) }), true);
+      return;
+    }
     renderPokemon(data);
     setStatus(tr('status.found', { name: formatName(data.name) }));
   } catch (error) {
@@ -242,14 +256,20 @@ ui.form.addEventListener('submit', (event) => {
   loadPokemon(ui.input.value);
 });
 ui.previous.addEventListener('click', () => {
-  if (currentPokemon && currentPokemon.id > 1) loadPokemon(currentPokemon.id - 1);
+  const range = window.PokedexCatalog.rangeFor(ui.generation.value);
+  if (currentPokemon && currentPokemon.id > range.first && currentPokemon.id <= range.last) loadPokemon(currentPokemon.id - 1);
 });
 ui.next.addEventListener('click', () => {
-  if (currentPokemon && currentPokemon.id < MAX_POKEMON) loadPokemon(currentPokemon.id + 1);
+  const range = window.PokedexCatalog.rangeFor(ui.generation.value);
+  if (currentPokemon && currentPokemon.id >= range.first && currentPokemon.id < range.last) loadPokemon(currentPokemon.id + 1);
 });
 ui.random.addEventListener('click', () => {
-  let id = Math.floor(Math.random() * MAX_POKEMON) + 1;
-  if (currentPokemon && MAX_POKEMON > 1 && id === currentPokemon.id) id = id % MAX_POKEMON + 1;
+  const range = window.PokedexCatalog.rangeFor(ui.generation.value);
+  const count = range.last - range.first + 1;
+  let id = Math.floor(Math.random() * count) + range.first;
+  if (currentPokemon && count > 1 && id === currentPokemon.id) {
+    id = range.first + (id - range.first + 1) % count;
+  }
   loadPokemon(id);
 });
 ui.favorite.addEventListener('click', () => {
@@ -302,6 +322,16 @@ document.addEventListener('pokedex:language-change', () => {
     renderFavorites();
   }
 });
+window.PokedexApp = {
+  loadPokemon,
+  get currentPokemon() { return currentPokemon; },
+  refreshNavigation() {
+    const range = window.PokedexCatalog.rangeFor(ui.generation.value);
+    ui.previous.disabled = !currentPokemon || currentPokemon.id <= range.first || currentPokemon.id > range.last;
+    ui.next.disabled = !currentPokemon || currentPokemon.id >= range.last || currentPokemon.id < range.first;
+  }
+};
+
 renderFavorites();
 let last = 1;
 try {
