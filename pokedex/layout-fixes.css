@@ -41,4 +41,22 @@
   .footer{display:none}
 }
 
+/* Em alturas menores, reduz o conjunto inteiro para manter todos os blocos visíveis. */
+@media (min-width:821px) and (max-height:760px){
+  .site-header{height:44px;padding:7px 18px}
+  .page{padding:4px 16px 8px;zoom:.82}
+  .introduction{margin-bottom:4px}
+  .introduction h1{font-size:25px;margin-bottom:3px}
+  .device-top{height:42px;padding:6px 18px}
+  .lens{width:36px;height:36px}
+  .left-panel{padding:8px 18px}
+  .screen{min-height:145px}
+  .pokemon-image{width:112px;height:112px}
+  .search-form{margin-top:8px}
+  .controls{margin-top:6px}
+  .right-panel{padding:8px 18px 7px}
+  .panel-shortcut{margin-top:6px}
+  .device-bottom{padding:5px 18px}
+}
+
 @media (max-width:820px){html,body{overflow-x:hidden;overflow-y:auto}}
