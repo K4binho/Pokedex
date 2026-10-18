@@ -128,6 +128,17 @@
     }
   } catch { /* storage is optional */ }
   setGenerationLabels();
+  if (Number(generation.value) !== 0) {
+    const range = api.rangeFor(generation.value);
+    let remembered = 1;
+    try { remembered = Number(JSON.parse(localStorage.getItem('k4-pokedex-last-v1'))); }
+    catch { /* previous selection unavailable */ }
+    if (!api.inGeneration(remembered, Number(generation.value))) {
+      // Ensure the initial view respects a saved generation.
+      window.PokedexApp.loadPokemon(range.first);
+    }
+    window.PokedexApp.refreshNavigation();
+  }
   window.PokedexSearch = { suggest, hide, get generation() { return Number(generation.value); } };
   // Preload the index without delaying the visible Pokémon details.
   void loadIndex().catch(() => {});
