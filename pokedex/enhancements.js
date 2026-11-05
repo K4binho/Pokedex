@@ -31,8 +31,12 @@
   let tabLoaded = new Set();
 
   if (nodes.intro) {
-    const delay = matchMedia('(prefers-reduced-motion: reduce)').matches ? 0 : 3400;
-    window.setTimeout(() => nodes.intro?.remove(), delay);
+    let skipIntro = matchMedia('(prefers-reduced-motion: reduce)').matches;
+    try {
+      skipIntro = skipIntro || sessionStorage.getItem('k4-pokedex-intro-shown-v1') === '1';
+      sessionStorage.setItem('k4-pokedex-intro-shown-v1', '1');
+    } catch { /* Session storage is optional. */ }
+    window.setTimeout(() => nodes.intro?.remove(), skipIntro ? 0 : 3400);
   }
 
   const el = (tag, className = '', content) => {
