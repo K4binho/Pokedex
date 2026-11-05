@@ -2,14 +2,18 @@
 <html lang="pt-BR">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#d52937">
+  <meta name="application-name" content="K4 Pokédex">
+  <meta name="mobile-web-app-capable" content="yes">
+  <link rel="manifest" href="./manifest.webmanifest">
   <meta name="description" content="Explore Pokémon por nome ou número nesta Pokédex interativa. Veja tipos, atributos, habilidades e salve seus favoritos.">
   <link rel="icon" type="image/png" href="./icon.png">
   <link rel="preconnect" href="https://pokeapi.co">
   <link rel="preconnect" href="https://raw.githubusercontent.com">
   <link rel="stylesheet" href="./style.css?v=5">
   <link rel="stylesheet" href="./layout-fixes.css?v=1">
+  <link rel="stylesheet" href="./android.css?v=1">
   <script src="./guide.js?v=3" defer></script>
   <script src="./ability-names.js?v=4" defer></script>
   <script src="./catalog.js?v=5" defer></script>
@@ -18,6 +22,7 @@
   <script src="./script.js?v=5" defer></script>
   <script src="./tabs.js?v=4" defer></script>
   <script src="./search.js?v=5" defer></script>
+  <script src="./android.js?v=1" defer></script>
   <title>Pokédex — Explore o mundo Pokémon</title>
 </head>
 <body>
@@ -69,6 +74,7 @@
             <div class="screen-footer"><span class="screen-led" aria-hidden="true"></span><span class="speaker" aria-hidden="true"></span></div>
           </div>
 
+          <p class="mobile-swipe-hint" data-i18n="mobile.swipe">Deslize na imagem para trocar de Pokémon.</p>
           <form id="search-form" class="search-form" role="search">
             <label for="pokemon-search" data-i18n="search.label">Buscar Pokémon</label>
             <div class="search-row">
@@ -96,10 +102,14 @@
             <button id="random" class="btn btn-ghost" type="button"><span data-i18n="controls.random">Aleatório ⤨</span></button>
             <button id="favorite" class="btn btn-favorite" type="button" aria-pressed="false" aria-label="Adicionar Pokémon aos favoritos"><span aria-hidden="true">♡</span> Favoritar</button>
           </div>
+          <div class="mobile-actions">
+            <a class="mobile-jump" href="#details-screen" data-i18n="mobile.details">Ver dados e evolução ↓</a>
+            <button id="install-app" class="install-button" type="button" hidden data-i18n="mobile.install">Instalar no celular</button>
+          </div>
           <p id="status" class="status" role="status" aria-live="polite" data-i18n="status.initial">Preparando sua Pokédex...</p>
         </section>
 
-        <section class="right-panel" aria-label="Informações do Pokémon">
+        <section id="details-screen" class="right-panel" aria-label="Informações do Pokémon">
           <div class="panel-heading">
             <span class="panel-number">02 / TRAINER DATA</span>
             <span class="panel-dot" aria-hidden="true"></span>
@@ -175,6 +185,7 @@
             </section>
           </div>
           <div class="panel-shortcut"><span class="shortcut-dot" aria-hidden="true"></span><span data-i18n="header.caption">Um Pokémon de cada vez</span></div>
+          <a class="mobile-back" href="#search-form" data-i18n="mobile.back">Voltar à pesquisa ↑</a>
         </section>
       </div>
       <div class="device-bottom" aria-hidden="true"><span>EST. 1996</span><span data-i18n="footer.built">POKÉDEX // ONLINE</span></div>
