@@ -33,6 +33,20 @@ O filtro não usa a geração em que cada espécie estreou e **não** correspond
 
 A seleção é salva de forma independente do antigo filtro numérico, para evitar preferências incorretas após a atualização.
 
+## Android: navegador e instalação na tela inicial
+
+A versão Android mantém o mesmo endereço do GitHub Pages, sem precisar instalar um APK:
+
+1. No Chrome ou Samsung Internet para Android, abra [a Pokédex](https://k4binho.github.io/Pokedex/).
+2. Se aparecer **Instalar no celular** na interface, toque no botão e confirme no navegador.
+3. Se o botão não aparecer, use o menu do navegador e escolha **Instalar aplicativo** ou **Adicionar à tela inicial**, quando essa opção estiver disponível.
+
+A experiência móvel tem controles de toque ampliados, campos sem ampliação automática do teclado, respeito à área segura do Android, telas empilhadas, links **Ver dados e evolução** e **Voltar à pesquisa**, navegação por gesto horizontal na imagem e tradução PT-BR/EN. A animação de abertura aparece apenas uma vez por sessão para evitar repetição durante a navegação.
+
+O PWA fornece ícones quadrados de **192 e 512 px**, manifesto `standalone` e service worker. O cache mantém a interface básica acessível quando possível, mas **buscas, dados novos e ilustrações da PokéAPI ainda exigem internet**. O funcionamento da instalação depende do navegador Android e de seus critérios de compatibilidade.
+
+A interface desktop não foi substituída; os novos ajustes de CSS são aplicados a celulares e tablets Android ou telas estreitas.
+
 ## Recursos adicionais
 
 - Animação de Pokébola abrindo o site (respeita preferência por movimento reduzido).
@@ -70,6 +84,8 @@ node --check pokedex/tabs.js
 node --check pokedex/catalog.js
 node --check pokedex/search.js
 node --check pokedex/ability-names.js
+node --check pokedex/android.js
+node --check pokedex/sw.js
 node --test tests/*.test.cjs
 ```
 
@@ -93,6 +109,12 @@ pokedex/tabs.js             # Navegação e foco acessível entre abas
 pokedex/catalog.js          # Grupos de jogos, dados das Pokédex e busca inteligente
 pokedex/search.js           # Autocompletar e seleção da Pokédex de cada jogo
 pokedex/ability-names.js    # Glossário PT-BR (traduções livres)
+pokedex/android.css         # Layout responsivo para Android
+pokedex/android.js          # Gestos, registro PWA e botão de instalação
+pokedex/manifest.webmanifest # Instalação na tela inicial
+pokedex/sw.js               # Cache local do shell da Pokédex
+pokedex/icons/*.png         # Ícones do PWA (192 e 512 px)
+tests/android.test.cjs      # Testes específicos Android
 tests/*.test.cjs            # Testes automatizados Node
 ```
 
