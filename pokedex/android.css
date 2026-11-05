@@ -241,3 +241,20 @@ button, a, select { touch-action: manipulation; }
 @media (prefers-reduced-motion: reduce) {
   .mobile-jump, .mobile-back { scroll-behavior: auto; }
 }
+
+.mobile-swipe-hint { display: none; }
+.mobile-actions { display: none; }
+@media (max-width: 820px) {
+  .mobile-swipe-hint {
+    display: block;
+    text-align: center;
+    margin: 11px 0 0;
+    color: #fff0ed;
+    font-size: 11px;
+    letter-spacing: .015em;
+  }
+  .mobile-actions { display: flex; gap: 8px; flex-wrap: wrap; align-items: stretch; }
+  .mobile-actions > .mobile-jump { flex: 1 1 190px; }
+  .mobile-actions > .install-button { flex: 1 1 120px; min-height: 45px; margin-top: 11px; }
+  .mobile-actions > .install-button[hidden] { display: none !important; }
+}
