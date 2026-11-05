@@ -258,3 +258,21 @@ button, a, select { touch-action: manipulation; }
   .mobile-actions > .install-button { flex: 1 1 120px; min-height: 45px; margin-top: 11px; }
   .mobile-actions > .install-button[hidden] { display: none !important; }
 }
+
+/* Android tablets in landscape may expose desktop-width CSS viewports.
+ * Keep the two-panel device but allow its content to scroll and avoid
+ * the desktop-only viewport zoom and clipping rules.
+ */
+@media (min-width: 821px) and (max-width: 1200px) and (pointer: coarse) {
+  html, body { height: auto !important; overflow-x: clip !important; overflow-y: auto !important; }
+  .page { zoom: 1 !important; width: 100%; padding: 16px 18px 30px; }
+  .pokedex { box-shadow: 0 12px 0 #801a25, 0 26px 56px #0007; }
+  .screen { min-height: 225px; }
+  .pokemon-image { width: 185px; height: 185px; }
+  .left-panel { padding: 18px; }
+  .right-panel { padding: 18px; }
+  .tab-viewport { max-height: none !important; overflow: visible !important; }
+  .detail-tab { min-height: 46px; font-size: 11px; }
+  .search-row input, .generation-row select { min-height: 46px; font-size: 16px; }
+  .controls button { min-height: 46px; }
+}
