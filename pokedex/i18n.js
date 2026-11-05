@@ -8,6 +8,10 @@
     pt: {
       'brand.edition': '/ CLASSIC',
       'header.caption': 'Um Pokémon de cada vez',
+      'mobile.swipe': 'Deslize na imagem para trocar de Pokémon.',
+      'mobile.details': 'Ver dados e evolução ↓',
+      'mobile.back': 'Voltar à pesquisa ↑',
+      'mobile.install': 'Instalar no celular',
       'search.label': 'Buscar Pokémon',
       'search.placeholder': 'Nome ou número. Ex.: pikachu',
       'search.button': 'Buscar ↗',
@@ -177,6 +181,10 @@
     en: {
       'brand.edition': '/ CLASSIC',
       'header.caption': 'One Pokémon at a time',
+      'mobile.swipe': 'Swipe the image to change Pokémon.',
+      'mobile.details': 'View details and evolution ↓',
+      'mobile.back': 'Back to search ↑',
+      'mobile.install': 'Install on phone',
       'search.label': 'Search Pokémon',
       'search.placeholder': 'Name or number. E.g.: pikachu',
       'search.button': 'Search ↗',

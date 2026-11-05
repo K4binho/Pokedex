@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title">
+  <title id="title">K4 Pokédex</title>
+  <rect width="512" height="512" rx="110" fill="#14212c"/>
+  <circle cx="256" cy="256" r="176" fill="#f7fffc"/>
+  <circle cx="256" cy="256" r="161" fill="#15222c"/>
+  <path d="M99 256a157 157 0 0 1 314 0H99Z" fill="#ef4655"/>
+  <path d="M99 256a157 157 0 0 0 314 0H99Z" fill="#f0f8f9"/>
+  <path d="M99 243h314v26H99Z" fill="#15222c"/>
+  <circle cx="256" cy="256" r="49" fill="#15222c"/>
+  <circle cx="256" cy="256" r="33" fill="#f8ffff"/>
+  <circle cx="256" cy="256" r="21" fill="#66dcf5"/>
+  <path d="M141 189c16-41 54-70 99-79" fill="none" stroke="#fff" stroke-opacity=".38" stroke-width="17" stroke-linecap="round"/>
+</svg>

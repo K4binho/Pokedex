@@ -19,6 +19,8 @@ jobs:
           node --check pokedex/search.js
           node --check pokedex/catalog.js
           node --check pokedex/ability-names.js
+          node --check pokedex/android.js
+          node --check pokedex/sw.js
       - name: Run guide logic tests
         run: node --test tests/*.test.cjs
       - name: Check opening experience
@@ -45,6 +47,16 @@ jobs:
           grep -q 'version-group/' pokedex/search.js
           grep -q 'pokedex/' pokedex/search.js
           ! grep -q 'rangeFor(ui.generation' pokedex/script.js
+      - name: Check Android installation assets
+        run: |
+          test -s pokedex/android.css
+          test -s pokedex/android.js
+          test -s pokedex/manifest.webmanifest
+          test -s pokedex/sw.js
+          test -s pokedex/icons/icon-192.png
+          test -s pokedex/icons/icon-512.png
+          grep -q 'viewport-fit=cover' pokedex/index.html
+          grep -q 'href="./manifest.webmanifest"' pokedex/index.html
       - name: Check entrypoint files
         run: |
           test -s index.html
